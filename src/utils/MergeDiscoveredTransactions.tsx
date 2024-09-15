@@ -163,6 +163,8 @@ const MergeDiscoveredTransactions = () => {
       ...keepSendOnly.map((transaction) => Number(transaction.feeRate))
     );
 
+    console.log("maxFeeRate: ", maxFeeRate);
+
     const inputs = transformedData.filter((item) => item.direction === "input");
     const outputs = transformedData.filter(
       (item) => item.direction === "output"

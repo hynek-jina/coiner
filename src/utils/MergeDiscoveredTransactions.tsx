@@ -305,9 +305,13 @@ const addPathToInputs = (
   accountInfo: AccountInfo
 ): TransactionData => {
   const updatedInputs = transactionData.inputs.map((input) => {
-    const matchingAddress = accountInfo.addresses?.used.find(
-      (addressInfo) => addressInfo.address === input.address
-    );
+    const matchingAddress =
+      accountInfo.addresses?.used.find(
+        (addressInfo) => addressInfo.address === input.address
+      ) ||
+      accountInfo.addresses?.change.find(
+        (addressInfo) => addressInfo.address === input.address
+      );
 
     if (matchingAddress) {
       return {
@@ -326,18 +330,20 @@ const addPathToInputs = (
 };
 
 const getAddressN = (path: string): number[] => {
-  return path.split("/").map((level) => {
-    if (level.endsWith("'")) {
-      return parseInt(level.slice(0, -1), 10) + 0x80000000; // Hardened
-    }
-    return parseInt(level, 10);
-  });
+  return path
+    .split("/")
+    .filter((level) => level !== "m")
+    .map((level) => {
+      if (level.endsWith("'")) {
+        return parseInt(level.slice(0, -1), 10) + 0x80000000; // Hardened
+      }
+      return parseInt(level, 10);
+    });
 };
 
 const prepareForSigning = (
   transactionData: TransactionData
 ): SignTransaction => {
-  // Převod inputů
   const inputs = transactionData.inputs.map((input) => ({
     address_n: getAddressN(input.path),
     prev_index: input.vout,
@@ -346,14 +352,24 @@ const prepareForSigning = (
     script_type: input.scriptType,
   }));
 
-  // Převod outputů
-  const outputs = transactionData.outputs.map((output) => ({
-    address_n: getAddressN(output.path),
-    amount: output.amount,
-    script_type: output.scriptType,
-  }));
+  const outputs = [];
 
-  // Vrácení struktury pro signTransaction
+  for (const output of transactionData.outputs) {
+    if (output.isOwn) {
+      outputs.push({
+        address_n: getAddressN(output.path),
+        amount: output.amount,
+        script_type: output.scriptType,
+      });
+    } else {
+      outputs.push({
+        address: output.address,
+        amount: output.amount,
+        script_type: output.scriptType,
+      });
+    }
+  }
+
   return {
     inputs,
     outputs,
@@ -370,7 +386,6 @@ const MergeDiscoveredTransactions = () => {
   if (accountInfo === null) {
     return null;
   }
-
   const handleButtonClick = async () => {
     const keepSendOnly = filterTransactionsByType(
       pendingTransactionsDummyData,
@@ -427,9 +442,7 @@ const MergeDiscoveredTransactions = () => {
     <>
       <div>
         <p>Log merge of transactions</p>
-        <button onClick={handleButtonClick}>merge pending</button>
-
-        {/* <div>{buttonOutput}</div> */}
+        <button onClick={handleButtonClick}>Merge pending transactions</button>
       </div>
     </>
   );

@@ -121,10 +121,10 @@ const GetUtxos = () => {
         <button onClick={handleTrezorButtonClick}>Update UTXOs</button>
       </div>
       <div>Mining fees: {JSON.stringify(mempoolFees)}</div>
-      {/* <div>Change utxos:</div>
+      <div>Change utxos:</div>
       <div>{JSON.stringify(changeUtxos)}</div>
       <div>Unused change utxos:</div>
-      <div>{JSON.stringify(unusedChangeUtxos.flat())}</div>*/}
+      <div>{JSON.stringify(unusedChangeUtxos.flat())}</div>
 
       <div>Pending Transactions: {JSON.stringify(pendingTransactions)}</div>
       <button onClick={handleTrezorButton2Click}>

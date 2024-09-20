@@ -4,6 +4,7 @@ import { transactionDataAtom } from "../state/atoms";
 
 const SignTransaction = () => {
   const transactionData = useAtomValue(transactionDataAtom);
+  // const toBeSignedTransaction
 
   const handleTrezorButtonClick = async () => {
     const signResult = await TrezorConnect.signTransaction(transactionData);

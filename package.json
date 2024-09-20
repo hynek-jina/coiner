@@ -4,11 +4,11 @@
   "private": true,
   "dependencies": {
     "@mempool/mempool.js": "^2.3.0",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
+    "@testing-library/jest-dom": "^6.5.0",
+    "@testing-library/react": "^16.0.1",
     "@testing-library/user-event": "^13.5.0",
     "@trezor/connect-web": "^9.2.2",
-    "@types/jest": "^27.5.2",
+    "@types/jest": "^29.5.13",
     "@types/node": "^16.18.97",
     "@types/react": "^18.3.2",
     "@types/react-dom": "^18.3.0",
@@ -23,7 +23,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test": "react-scripts test --watchman=false",
     "eject": "react-scripts eject"
   },
   "eslintConfig": {
@@ -45,7 +45,10 @@
     ]
   },
   "devDependencies": {
-    "@babel/plugin-transform-private-property-in-object": "^7.24.6",
-    "@types/d3": "^7.4.3"
+    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@babel/plugin-transform-private-property-in-object": "^7.24.7",
+    "@types/d3": "^7.4.3",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.2.5"
   }
 }

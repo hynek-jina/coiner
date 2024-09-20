@@ -66,6 +66,7 @@ interface PendingTransaction {
   hex: string;
   blockTime: number;
   blockHeight: number;
+  lockTime: number;
   amount: string;
   fee: string;
   vsize: number;

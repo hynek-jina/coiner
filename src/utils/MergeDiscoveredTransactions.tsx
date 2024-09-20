@@ -1,197 +1,426 @@
+import TrezorConnect, {
+  AccountInfo,
+  SignTransaction,
+} from "@trezor/connect-web";
 import { PendingTransactions } from "../state/atoms";
+import { accountInfoDummyData } from "./tests/data/accountInfoDummy";
+import { pendingTransactionsDummyData } from "./tests/data/pendingTransactionDummy";
+
+type TransactionData = {
+  inputs: TransactionInput[];
+  outputs: TransactionOutput[];
+  vsize: number;
+};
+
+interface TransactionInput {
+  // direction: "input";
+  txid: string;
+  vout: number;
+  address: string;
+  isOwn: boolean;
+  path: string;
+  amount: number;
+  scriptType?: inputScriptType;
+}
+
+interface TransactionOutput {
+  // direction: "output";
+  txid: string;
+  // vout: number;
+  address: string;
+  isOwn: boolean;
+  path: string;
+  amount: number;
+  scriptType?: outputScriptType;
+}
+
+type inputScriptType =
+  | "SPENDADDRESS"
+  | "SPENDMULTISIG"
+  | "SPENDWITNESS"
+  | "SPENDP2SHWITNESS"
+  | "SPENDTAPROOT";
+
+type outputScriptType =
+  | "PAYTOADDRESS"
+  | "PAYTOMULTISIG"
+  | "PAYTOWITNESS"
+  | "PAYTOP2SHWITNESS"
+  | "PAYTOTAPROOT";
+
+// TODO: Use real data
+
+export const filterTransactionsByType = (
+  transactions: PendingTransactions,
+  type: string
+): PendingTransactions => {
+  return transactions.filter((transaction) => transaction.type === type);
+};
+
+export const transformTransactionsData = (
+  transactions: PendingTransactions
+): TransactionData => {
+  return {
+    inputs: transactions.flatMap((transaction) =>
+      transaction.details.vin.map((input) => ({
+        txid: input.txid,
+        vout: input.vout,
+        address: input.addresses[0],
+        isOwn: input.isOwn ?? false,
+        path: "",
+        amount: Number(input.value),
+      }))
+    ),
+    outputs: transactions.flatMap((transaction) =>
+      transaction.details.vout.map((output) => ({
+        txid: transaction.txid,
+        address: output.addresses[0],
+        isOwn: output.isOwn ?? false,
+        path: "",
+        amount: Number(output.value),
+      }))
+    ),
+    vsize: transactions.reduce(
+      (sum, transaction) => sum + transaction.vsize,
+      0
+    ),
+  };
+};
+
+export const filterOwnOutputs = (transactionData: TransactionData) => {
+  return transactionData.outputs.filter((output) => output.isOwn);
+};
+
+export const mergeChangeAddresses = (
+  previousTransactionsData: TransactionData
+): TransactionData => {
+  const ownOutputsData = filterOwnOutputs(previousTransactionsData);
+
+  const totalAmount = ownOutputsData.reduce(
+    (sum, output) => sum + output.amount,
+    0
+  );
+
+  const mergedOutputs: TransactionOutput[] = [
+    {
+      ...ownOutputsData[0],
+      amount: totalAmount,
+    },
+    ...previousTransactionsData.outputs.filter((output) => !output.isOwn),
+  ];
+
+  return {
+    ...previousTransactionsData,
+    outputs: mergedOutputs,
+  };
+};
+
+const updateChangeAddress = (
+  transactionData: TransactionData,
+  accountInfo: AccountInfo
+): TransactionData => {
+  let firstUnusedChangeAddress = accountInfo?.addresses?.change.find(
+    (address) => address.transfers === 0
+  );
+
+  const updatedOutputs = transactionData.outputs.map((output) => {
+    if (output.isOwn && firstUnusedChangeAddress) {
+      return {
+        ...output,
+        address: firstUnusedChangeAddress.address,
+        path: firstUnusedChangeAddress.path,
+      };
+    }
+    return output;
+  });
+
+  return {
+    ...transactionData,
+    outputs: updatedOutputs,
+  };
+};
+
+const getAddressVSize = (address: string, type: "input" | "output"): number => {
+  if (type === "input") {
+    if (address.startsWith("bc1p") || address.startsWith("tb1p")) {
+      return 57.5; // Taproot input size
+    } else if (address.startsWith("bc1") || address.startsWith("tb1")) {
+      return 68; // SegWit input size
+    } else if (address.startsWith("3") || address.startsWith("2")) {
+      return 91; // P2SH input size
+    } else if (
+      address.startsWith("1") ||
+      address.startsWith("m") ||
+      address.startsWith("n")
+    ) {
+      return 148; // Legacy input size
+    }
+  } else if (type === "output") {
+    if (address.startsWith("bc1p") || address.startsWith("tb1p")) {
+      return 43; // Taproot output size
+    } else if (address.startsWith("bc1") || address.startsWith("tb1")) {
+      return 31; // SegWit output size
+    } else if (address.startsWith("3") || address.startsWith("2")) {
+      return 32; // P2SH output size
+    } else if (
+      address.startsWith("1") ||
+      address.startsWith("m") ||
+      address.startsWith("n")
+    ) {
+      return 34; // Legacy output size
+    }
+  }
+  return 0; // Default size if address type is unknown
+};
+
+const getInputScriptType = (address: string): inputScriptType => {
+  if (address.startsWith("bc1p") || address.startsWith("tb1p")) {
+    return "SPENDTAPROOT";
+  } else if (address.startsWith("bc1") || address.startsWith("tb1")) {
+    return "SPENDWITNESS";
+  } else if (address.startsWith("3") || address.startsWith("2")) {
+    return "SPENDP2SHWITNESS";
+  } else if (
+    address.startsWith("1") ||
+    address.startsWith("m") ||
+    address.startsWith("n")
+  ) {
+    return "SPENDADDRESS";
+  } else {
+    return "SPENDADDRESS";
+  }
+};
+
+const getOutputScriptType = (address: string): outputScriptType => {
+  if (address.startsWith("bc1p") || address.startsWith("tb1p")) {
+    return "PAYTOTAPROOT";
+  } else if (address.startsWith("bc1") || address.startsWith("tb1")) {
+    return "PAYTOWITNESS";
+  } else if (address.startsWith("3") || address.startsWith("2")) {
+    return "PAYTOP2SHWITNESS";
+  } else if (
+    address.startsWith("1") ||
+    address.startsWith("m") ||
+    address.startsWith("n")
+  ) {
+    return "PAYTOADDRESS";
+  } else {
+    return "PAYTOADDRESS";
+  }
+};
+
+const addScriptTypes = (transactionData: TransactionData): TransactionData => {
+  const updatedInputs = transactionData.inputs.map((input) => {
+    return {
+      ...input,
+      scriptType: getInputScriptType(input.address),
+    };
+  });
+
+  const updatedOutputs = transactionData.outputs.map((output) => {
+    return {
+      ...output,
+      scriptType: getOutputScriptType(output.address),
+    };
+  });
+
+  return {
+    ...transactionData,
+    inputs: updatedInputs,
+    outputs: updatedOutputs,
+  };
+};
+
+const calculateVsize = (transactionData: TransactionData): number => {
+  const baseTxSize = 10; //
+  const totalInputSize = transactionData.inputs.reduce((sum, input) => {
+    return sum + getAddressVSize(input.address, "input");
+  }, 0);
+  const totalOutputSize = transactionData.outputs.reduce((sum, output) => {
+    return sum + getAddressVSize(output.address, "output");
+  }, 0);
+  return baseTxSize + totalInputSize + totalOutputSize;
+};
+
+const removeRedundantInputs = (
+  previousTransactionsData: TransactionData,
+  feeRate: number
+): TransactionData => {
+  const totalDistantOutputValue = previousTransactionsData.outputs
+    .filter((output) => !output.isOwn)
+    .reduce((sum, output) => sum + output.amount, 0);
+
+  const sortedInputs = previousTransactionsData.inputs.sort(
+    (a, b) => b.amount - a.amount
+  );
+  let selectedInputs: TransactionInput[] = [];
+  let temporaryVSize = 0;
+  let filteredInputsAreSufficient = false;
+  let temporaryTransactionData = previousTransactionsData;
+
+  for (let i = 0; i < sortedInputs.length; i++) {
+    selectedInputs.push(sortedInputs[i]);
+
+    temporaryTransactionData = {
+      ...previousTransactionsData,
+      inputs: selectedInputs,
+    };
+
+    temporaryVSize = calculateVsize(temporaryTransactionData);
+
+    let temporaryInputsAmount = selectedInputs.reduce(
+      (sum, input) => sum + input.amount,
+      0
+    );
+
+    let changeOutputIndex = temporaryTransactionData.outputs.findIndex(
+      (output) => output.isOwn
+    );
+
+    filteredInputsAreSufficient =
+      temporaryVSize * feeRate + totalDistantOutputValue <=
+      temporaryInputsAmount;
+
+    if (filteredInputsAreSufficient) {
+      const newChangeAmount =
+        temporaryInputsAmount -
+        totalDistantOutputValue -
+        temporaryVSize * feeRate;
+
+      temporaryTransactionData.outputs[changeOutputIndex].amount =
+        newChangeAmount;
+
+      break;
+    }
+  }
+  if (!filteredInputsAreSufficient) {
+    return previousTransactionsData;
+  } else {
+    return temporaryTransactionData;
+  }
+};
+
+const addPathToInputs = (
+  transactionData: TransactionData,
+  accountInfo: AccountInfo
+): TransactionData => {
+  const updatedInputs = transactionData.inputs.map((input) => {
+    const matchingAddress = accountInfo.addresses?.used.find(
+      (addressInfo) => addressInfo.address === input.address
+    );
+
+    if (matchingAddress) {
+      return {
+        ...input,
+        path: matchingAddress.path,
+      };
+    }
+
+    return input;
+  });
+
+  return {
+    ...transactionData,
+    inputs: updatedInputs,
+  };
+};
+
+const getAddressN = (path: string): number[] => {
+  return path.split("/").map((level) => {
+    if (level.endsWith("'")) {
+      return parseInt(level.slice(0, -1), 10) + 0x80000000; // Hardened
+    }
+    return parseInt(level, 10);
+  });
+};
+
+const prepareForSigning = (
+  transactionData: TransactionData
+): SignTransaction => {
+  // Převod inputů
+  const inputs = transactionData.inputs.map((input) => ({
+    address_n: getAddressN(input.path),
+    prev_index: input.vout,
+    prev_hash: input.txid,
+    amount: input.amount,
+    script_type: input.scriptType,
+  }));
+
+  // Převod outputů
+  const outputs = transactionData.outputs.map((output) => ({
+    address_n: getAddressN(output.path),
+    amount: output.amount,
+    script_type: output.scriptType,
+  }));
+
+  // Vrácení struktury pro signTransaction
+  return {
+    inputs,
+    outputs,
+    coin: "test",
+    push: false,
+    amountUnit: 3,
+  };
+};
 
 const MergeDiscoveredTransactions = () => {
-  // const [buttonOutput, setButtonOutput] = useState("");
+  // const accountInfo = useAtomValue(accountInfoAtom);
+  const accountInfo = accountInfoDummyData;
+
+  if (accountInfo === null) {
+    return null;
+  }
 
   const handleButtonClick = async () => {
-    const originalData: PendingTransactions = [
-      {
-        type: "sent",
-        txid: "9f0006d32bd6590a2dfe9c44918bd0f7631d3444eda045defa7b81ce50e9ff59",
-        hex: "01000000000101583fccf0862ac468eb2600e9704331bdebce2a1c087517d74c5702de732fd85b0100000000fdffffff02a0860100000000002251209b9e3733012d68ee1cf8312923990474ca2b3eb9e0474a7ba03806f53f82309dfb4ef100000000001600142a8d2ad02106656b798ae4c717b40457b3b6068402483045022100c50b15d3af71339d07c9acfee5ee43f66ee5163aafaf1ad7c13b796ba69d45a6022034fa37a809ec265c410f8cb10868cb52005b7d967ca9a71b984e7972a767e524012103bea4c23410490337d57151edc92a0f5f1dc8aaaca0c6ca244d4cae968ab04cce00000000",
-        blockTime: 1717760591,
-        blockHeight: -1,
-        amount: "100000",
-        fee: "15300",
-        vsize: 153,
-        feeRate: "100",
-        targets: [
-          {
-            n: 0,
-            addresses: [
-              "tb1pnw0rwvcp945wu88cxy5j8xgywn9zk04eupr557aq8qr020uzxzwsml256v",
-            ],
-            isAddress: true,
-            amount: "100000",
-          },
-        ],
-        tokens: [],
-        internalTransfers: [],
-        rbf: true,
-        details: {
-          vin: [
-            {
-              txid: "5bd82f73de02574cd71775081c2aceebbd314370e90026eb68c42a86f0cc3f58",
-              vout: 1,
-              sequence: 4294967293,
-              n: 0,
-              addresses: ["tb1qsgc4av8rxez56935467q7kfj3e2fcx4swzs8f4"],
-              isAddress: true,
-              isOwn: true,
-              value: "15929695",
-              isAccountOwned: true,
-            },
-          ],
-          vout: [
-            {
-              value: "100000",
-              n: 0,
-              hex: "51209b9e3733012d68ee1cf8312923990474ca2b3eb9e0474a7ba03806f53f82309d",
-              addresses: [
-                "tb1pnw0rwvcp945wu88cxy5j8xgywn9zk04eupr557aq8qr020uzxzwsml256v",
-              ],
-              isAddress: true,
-            },
-            {
-              value: "15814395",
-              n: 1,
-              hex: "00142a8d2ad02106656b798ae4c717b40457b3b60684",
-              addresses: ["tb1q92xj45ppqejkk7v2unr30dqy27emvp5yh8ru2m"],
-              isAddress: true,
-              isOwn: true,
-              isAccountOwned: true,
-            },
-          ],
-          size: 235,
-          totalInput: "15929695",
-          totalOutput: "15914395",
-        },
-      },
-      {
-        type: "sent",
-        txid: "Edited 2nd transaction id",
-        hex: "01000000000101583fccf0862ac468eb2600e9704331bdebce2a1c087517d74c5702de732fd85b0100000000fdffffff02a0860100000000002251209b9e3733012d68ee1cf8312923990474ca2b3eb9e0474a7ba03806f53f82309dfb4ef100000000001600142a8d2ad02106656b798ae4c717b40457b3b6068402483045022100c50b15d3af71339d07c9acfee5ee43f66ee5163aafaf1ad7c13b796ba69d45a6022034fa37a809ec265c410f8cb10868cb52005b7d967ca9a71b984e7972a767e524012103bea4c23410490337d57151edc92a0f5f1dc8aaaca0c6ca244d4cae968ab04cce00000000",
-        blockTime: 1717760591,
-        blockHeight: -1,
-        amount: "100000",
-        fee: "15300",
-        vsize: 153,
-        feeRate: "100",
-        targets: [
-          {
-            n: 0,
-            addresses: [
-              "tb1pnw0rwvcp945wu88cxy5j8xgywn9zk04eupr557aq8qr020uzxzwsml256v",
-            ],
-            isAddress: true,
-            amount: "100000",
-          },
-        ],
-        tokens: [],
-        internalTransfers: [],
-        rbf: true,
-        details: {
-          vin: [
-            {
-              txid: "9f0006d32bd6590a2dfe9c44918bd0f7631d3444eda045defa7b81ce50e9ff59",
-              vout: 1,
-              sequence: 4294967293,
-              n: 0,
-              addresses: ["tb1q92xj45ppqejkk7v2unr30dqy27emvp5yh8ru2m"],
-              isAddress: true,
-              isOwn: true,
-              value: "15814395",
-              isAccountOwned: true,
-            },
-          ],
-          vout: [
-            {
-              value: "100000",
-              n: 0,
-              hex: "51209b9e3733012d68ee1cf8312923990474ca2b3eb9e0474a7ba03806f53f82309d",
-              addresses: [
-                "tb1pnw0rwvcp945wu88cxy5j8xgywn9zk04eupr557aq8qr020uzxzwsml256v",
-              ],
-              isAddress: true,
-            },
-            {
-              value: "15814395",
-              n: 1,
-              hex: "00142a8d2ad02106656b798ae4c717b40457b3b60684",
-              addresses: ["tb1q92xj45ppqejkk7v2unr30dqy27emvp5yh8ru2m"],
-              isAddress: true,
-              isOwn: true,
-              isAccountOwned: true,
-            },
-          ],
-          size: 235,
-          totalInput: "15929695",
-          totalOutput: "15914395",
-        },
-      },
-    ];
-    const keepSendOnly = originalData.filter(
-      (transaction) => transaction.type === "sent"
+    const keepSendOnly = filterTransactionsByType(
+      pendingTransactionsDummyData,
+      "sent"
     );
-    const transformedData = keepSendOnly.flatMap((transaction) =>
-      transaction.details.vin
-        .map((input) => ({
-          direction: "input",
-          txid: input.txid,
-          vout: input.vout,
-          address: input.addresses[0],
-          isOwn: input.isOwn ?? false,
-        }))
-        .concat(
-          transaction.details.vout.map((output) => ({
-            direction: "output",
-            txid: transaction.txid,
-            vout: output.n,
-            address: output.addresses[0],
-            isOwn: output.isOwn ?? false,
-          }))
-        )
+    const transformedData = transformTransactionsData(keepSendOnly);
+
+    const oldTotalFee = keepSendOnly.reduce(
+      (acc, transaction) => acc + Number(transaction.fee),
+      0
     );
+    console.log("totalFee: ", oldTotalFee);
 
-    console.log(transformedData);
-
-    // Identify dependent transactions
-    // For dependent transactions calculate effective fee rate
-    // Collect max fee rate from independend pending send transactions and comapre it with effective fee rate of dependent transactions
-    //-> Identify biggest fee rate
-    const maxFeeRate = Math.max(
+    const oldMaxFeeRate = Math.max(
       ...keepSendOnly.map((transaction) => Number(transaction.feeRate))
     );
 
-    console.log("maxFeeRate: ", maxFeeRate);
+    console.log("maxFeeRate: ", oldMaxFeeRate);
+    const newFeeRate = oldMaxFeeRate + 1;
+    console.log("newFeeRate: ", newFeeRate);
 
-    const inputs = transformedData.filter((item) => item.direction === "input");
-    const outputs = transformedData.filter(
-      (item) => item.direction === "output"
+    const mergedChangeAddresses = mergeChangeAddresses(transformedData);
+    const updatedChangeAddress = updateChangeAddress(
+      mergedChangeAddresses,
+      accountInfo
     );
 
-    const filteredInputs = inputs.filter(
-      (input) =>
-        !outputs.some(
-          (output) => output.txid === input.txid && output.vout === input.vout
-        )
+    const removedRedundantInputs = removeRedundantInputs(
+      updatedChangeAddress,
+      newFeeRate
     );
 
-    const filteredOutputs = outputs.filter(
-      (output) =>
-        !inputs.some(
-          (input) => input.txid === output.txid && input.vout === output.vout
-        )
+    console.log("removedRedundantInputs: ", removedRedundantInputs);
+
+    const addedInputPaths = addPathToInputs(
+      removedRedundantInputs,
+      accountInfo
     );
 
-    const filteredData = [...filteredInputs, ...filteredOutputs];
-    console.log(filteredData);
+    const addedScriptTypes = addScriptTypes(addedInputPaths);
 
-    // merge own outputs
-    //calculta vsize
-    // enhance output amount according to required fee rate
-    // build transaction
-    // sign transaction
+    const toBeSignedTransaction = prepareForSigning(addedScriptTypes);
+    console.log("toBeSignedTransaction: ", toBeSignedTransaction);
+
+    const signResult = await TrezorConnect.signTransaction(
+      toBeSignedTransaction
+    );
+    console.log("signResult: ", signResult);
+
+    // TODO: Identify dependent transactions
   };
 
   return (

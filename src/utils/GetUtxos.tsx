@@ -1,5 +1,5 @@
 import TrezorConnect from "@trezor/connect-web";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import {
   ChangeUtxo,
   accountInfoAtom,
@@ -7,21 +7,21 @@ import {
   mempoolFeesAtom,
   pendingTransactionsAtom,
   unusedChangeUtxoAtom,
-  utxoAtom,
+  // utxoAtom,
   xpubAtom,
 } from "../state/atoms";
 import { fetchMempoolFees } from "./GetMempoolFees";
 
-TrezorConnect.init({
-  lazyLoad: true, // this param will prevent iframe injection until TrezorConnect.method will be called
-  manifest: {
-    email: "developer@xyz.com",
-    appUrl: "http://your.application.com",
-  },
-});
+// TrezorConnect.init({
+//   lazyLoad: true, // this param will prevent iframe injection until TrezorConnect.method will be called
+//   manifest: {
+//     email: "developer@xyz.com",
+//     appUrl: "http://your.application.com",
+//   },
+// });
 
 const GetUtxos = () => {
-  const setUtxos = useSetAtom(utxoAtom);
+  // const setUtxos = useSetAtom(utxoAtom);
   const [changeUtxos, setChangeUtxos] = useAtom(changeUtxoAtom);
   const [unusedChangeUtxos] = useAtom(unusedChangeUtxoAtom);
   const [xpub, setXpub] = useAtom(xpubAtom);
@@ -83,22 +83,22 @@ const GetUtxos = () => {
         console.log("changeUtxos: ", changeUtxos);
         console.log("unusedChangeUtxos: ", unusedChangeUtxos);
 
-        const utxoData =
-          discovery.payload.utxo?.map(
-            (
-              { txid, vout, amount, blockHeight, address, path, confirmations },
-              index
-            ) => ({
-              txid,
-              vout: Number(vout),
-              amount: Number(amount),
-              blockHeight: Number(blockHeight),
-              address,
-              path,
-              confirmations: Number(confirmations),
-            })
-          ) ?? [];
-        setUtxos(utxoData);
+        // const utxoData =
+        //   discovery.payload.utxo?.map(
+        //     (
+        //       { txid, vout, amount, blockHeight, address, path, confirmations },
+        //       index
+        //     ) => ({
+        //       txid,
+        //       vout: Number(vout),
+        //       amount: Number(amount),
+        //       blockHeight: Number(blockHeight),
+        //       address,
+        //       path,
+        //       confirmations: Number(confirmations),
+        //     })
+        //   ) ?? [];
+        // setUtxos(utxoData);
       } else {
         console.error("Discovery error:", discovery.payload.error);
       }

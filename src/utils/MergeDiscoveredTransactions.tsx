@@ -13,8 +13,8 @@ type TransactionData = {
 };
 
 interface TransactionInput {
-  // direction: "input";
-  txid: string;
+  txid: string; //previous transaction id
+  pendingTxid: string; //current transaction id
   vout: number;
   address: string;
   isOwn: boolean;
@@ -24,7 +24,6 @@ interface TransactionInput {
 }
 
 interface TransactionOutput {
-  // direction: "output";
   txid: string;
   // vout: number;
   address: string;
@@ -57,6 +56,7 @@ export const filterTransactionsByType = (
   return transactions.filter((transaction) => transaction.type === type);
 };
 
+//TODO: přidat info o původní transakci parent/child
 export const transformTransactionsData = (
   transactions: PendingTransactions
 ): TransactionData => {
@@ -64,6 +64,7 @@ export const transformTransactionsData = (
     inputs: transactions.flatMap((transaction) =>
       transaction.details.vin.map((input) => ({
         txid: input.txid,
+        pendingTxid: transaction.txid,
         vout: input.vout,
         address: input.addresses[0],
         isOwn: input.isOwn ?? false,
@@ -253,14 +254,28 @@ const removeRedundantInputs = (
   const sortedInputs = previousTransactionsData.inputs.sort(
     (a, b) => b.amount - a.amount
   );
+
   let selectedInputs: TransactionInput[] = [];
   let temporaryVSize = 0;
   let filteredInputsAreSufficient = false;
   let temporaryTransactionData = previousTransactionsData;
 
-  for (let i = 0; i < sortedInputs.length; i++) {
-    selectedInputs.push(sortedInputs[i]);
+  // Adding biggest input from each parent transaction
+  const uniquePendingTxids = new Set(
+    previousTransactionsData.inputs.map((input) => input.pendingTxid)
+  );
 
+  uniquePendingTxids.forEach((pendingTxid) => {
+    const inputsFromTxid = sortedInputs.filter(
+      (input) => input.pendingTxid === pendingTxid
+    );
+    if (inputsFromTxid.length > 0) {
+      selectedInputs.push(inputsFromTxid[0]);
+    }
+  });
+
+  // Check if the selected inputs are sufficient
+  for (let i = selectedInputs.length; i < sortedInputs.length; i++) {
     temporaryTransactionData = {
       ...previousTransactionsData,
       inputs: selectedInputs,
@@ -291,8 +306,11 @@ const removeRedundantInputs = (
         newChangeAmount;
 
       break;
+    } else {
+      selectedInputs.push(sortedInputs[i]);
     }
   }
+
   if (!filteredInputsAreSufficient) {
     return previousTransactionsData;
   } else {

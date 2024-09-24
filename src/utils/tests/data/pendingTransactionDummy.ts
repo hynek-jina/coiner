@@ -36,6 +36,17 @@ export const pendingTransactionsDummyData: PendingTransactions = [
           value: "2986913",
           isAccountOwned: true,
         },
+        {
+          txid: "78131c580c9e02a42443a900fe5b49729005543b312231208eee95a724101348",
+          vout: 1,
+          sequence: 4294967293,
+          n: 0,
+          addresses: ["tb1qec9m3dgyavqs7awvnnq0ne62etnw02hu54j6lt"],
+          isAddress: true,
+          isOwn: true,
+          value: "11185760",
+          isAccountOwned: true,
+        },
       ],
       vout: [
         {

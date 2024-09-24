@@ -1,17 +1,17 @@
 // src/components/BubbleChart.tsx
 import * as d3 from "d3";
-import { useAtomValue } from "jotai";
-import React, { useEffect, useRef, useState } from "react";
+import { useAtom, useAtomValue } from "jotai";
+import React, { useEffect, useRef } from "react";
 import {
   availableBalanceAtom,
   totalAmountAtom,
-  Utxo,
   utxoAtom,
 } from "../state/atoms";
 
 const BubbleChart: React.FC = () => {
-  const defaultUtxos = useAtomValue(utxoAtom);
-  const [utxos, setUtxos] = useState<Utxo[]>(defaultUtxos);
+  // const defaultUtxos = useAtomValue(utxoAtom);
+  // const [utxos, setUtxos] = useState<Utxo[]>(defaultUtxos);
+  const [utxos, setUtxos] = useAtom(utxoAtom);
   const svgRef = useRef<SVGSVGElement | null>(null);
   // const [selectedValue, setSelectedValue] = useState<number | null>(null);
   const totalAmount = useAtomValue(totalAmountAtom);
@@ -58,6 +58,7 @@ const BubbleChart: React.FC = () => {
       .on("click", function (event, d) {
         console.log("hodnota d", d);
         // setSelectedValue(d.data.amount);
+
         handleBubbleClick(d.data.txid, d.data.vout);
       });
 

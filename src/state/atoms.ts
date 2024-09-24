@@ -98,43 +98,65 @@ export const transactionTemplateAtom = atom<SignTransaction>({
 
 export const accountInfoAtom = atom<AccountInfo | null>(null);
 
-export const utxoAtom = atom<Utxo[]>((get) => {
-  const accountInfo = get(accountInfoAtom);
-  if (!accountInfo || !accountInfo.utxo) {
-    return [
-      {
-        txid: "78650322334f23c5145782cd125a07de6527b5d3c26d0571b1b51e41759ea6ea",
-        vout: 0,
-        amount: 1638,
-        blockHeight: 2585441,
-        address: "tb1ql4w0l2836awduxgfe4egjgd0t4my8cgtdf9052",
-        path: "m/84'/1'/0'/1/49",
-        confirmations: 230740,
-      },
-      {
-        txid: "78650322334f23c5145782cd125a07de6527b5d3c26d0571b1b51e41759ea6ea",
-        vout: 1,
-        amount: 10000,
-        blockHeight: 2585441,
-        address: "tb1qfv8mwtk7mu7rzf85pcupp0zuhhkwhd34vggj0l",
-        path: "m/84'/1'/0'/0/50",
-        confirmations: 230740,
-      },
-    ];
-  }
+export const utxoAtom = atom<Utxo[]>([
+  {
+    txid: "78650322334f23c5145782cd125a07de6527b5d3c26d0571b1b51e41759ea6ea",
+    vout: 0,
+    amount: 1638,
+    blockHeight: 2585441,
+    address: "tb1ql4w0l2836awduxgfe4egjgd0t4my8cgtdf9052",
+    path: "m/84'/1'/0'/1/49",
+    confirmations: 230740,
+  },
+  {
+    txid: "78650322334f23c5145782cd125a07de6527b5d3c26d0571b1b51e41759ea6ea",
+    vout: 1,
+    amount: 10000,
+    blockHeight: 2585441,
+    address: "tb1qfv8mwtk7mu7rzf85pcupp0zuhhkwhd34vggj0l",
+    path: "m/84'/1'/0'/0/50",
+    confirmations: 230740,
+  },
+]);
+// export const utxoAtom = atom<Utxo[]>((get) => {
+//   const accountInfo = get(accountInfoAtom);
+//   console.log("máme accountInfo? ", accountInfo);
+//   console.log("a i utxo?", accountInfo?.utxo);
+//   if (!accountInfo || !accountInfo.utxo) {
+//     return [
+//       {
+//         txid: "78650322334f23c5145782cd125a07de6527b5d3c26d0571b1b51e41759ea6ea",
+//         vout: 0,
+//         amount: 1638,
+//         blockHeight: 2585441,
+//         address: "tb1ql4w0l2836awduxgfe4egjgd0t4my8cgtdf9052",
+//         path: "m/84'/1'/0'/1/49",
+//         confirmations: 230740,
+//       },
+//       {
+//         txid: "78650322334f23c5145782cd125a07de6527b5d3c26d0571b1b51e41759ea6ea",
+//         vout: 1,
+//         amount: 10000,
+//         blockHeight: 2585441,
+//         address: "tb1qfv8mwtk7mu7rzf85pcupp0zuhhkwhd34vggj0l",
+//         path: "m/84'/1'/0'/0/50",
+//         confirmations: 230740,
+//       },
+//     ];
+//   }
 
-  return accountInfo.utxo.map(
-    ({ txid, vout, amount, blockHeight, address, path, confirmations }) => ({
-      txid,
-      vout: Number(vout),
-      amount: Number(amount),
-      blockHeight: Number(blockHeight),
-      address,
-      path,
-      confirmations: Number(confirmations),
-    })
-  );
-});
+//   return accountInfo.utxo.map(
+//     ({ txid, vout, amount, blockHeight, address, path, confirmations }) => ({
+//       txid,
+//       vout: Number(vout),
+//       amount: Number(amount),
+//       blockHeight: Number(blockHeight),
+//       address,
+//       path,
+//       confirmations: Number(confirmations),
+//     })
+//   );
+// });
 
 export const pendingTransactionsAtom = atom((get) => {
   const accountInfo = get(accountInfoAtom);

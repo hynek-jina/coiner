@@ -1,15 +1,18 @@
 import TrezorConnect from "@trezor/connect-web";
+import { useAtomValue } from "jotai";
 import { useState } from "react";
+import { xpubAtom } from "../state/atoms";
 
 const FindPendingTxs = () => {
   const [buttonOutput, setButtonOutput] = useState("");
+  const xpub = useAtomValue(xpubAtom);
 
   const handleTrezorButtonClick = async () => {
     try {
       const discovery = await TrezorConnect.getAccountInfo({
         // path: "m/84'/1'/0'",
-        descriptor:
-          "vpub5Z1dr7Tk5iB1HP9Vtz3jM3an1eFnigrQxyLHnG1casbNCrTWrqLfdoFjr11q3xe3nGnrGezcZQCxusZAWWC4drqVWqaskuAEjnQVAN5YVRk",
+        descriptor: xpub,
+        // "vpub5Z1dr7Tk5iB1HP9Vtz3jM3an1eFnigrQxyLHnG1casbNCrTWrqLfdoFjr11q3xe3nGnrGezcZQCxusZAWWC4drqVWqaskuAEjnQVAN5YVRk",
         coin: "test",
         details: "txs", //"txids",
       });

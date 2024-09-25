@@ -75,7 +75,7 @@ const BubbleChart: React.FC = () => {
       .attr("text-anchor", "middle")
       .attr("fill", "white")
       .text((d) =>
-        d.data.amount < 500 ? " " : `${d.data.amount.toLocaleString("cs-CZ")} `
+        d.data.amount < 500 ? " " : `${d.data.amount.toLocaleString()} `
       );
   }, [utxos, setUtxos]);
 
@@ -89,8 +89,8 @@ const BubbleChart: React.FC = () => {
         height: "100vh",
       }}
     >
-      <h1>{totalAmount.toLocaleString("cs-CZ")}</h1>{" "}
-      <p> Available {availableBalance.toLocaleString("cs-CZ")} sats</p>
+      <h1>{totalAmount.toLocaleString()}</h1>{" "}
+      <p> Available {availableBalance.toLocaleString()} sats</p>
       <svg ref={svgRef} width="800" height="600"></svg>
       {/* {selectedValue !== null && (
         <p>Selected value: {selectedValue.toLocaleString("cs-CZ")}</p>

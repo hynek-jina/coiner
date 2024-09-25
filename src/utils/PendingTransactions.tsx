@@ -1,6 +1,6 @@
 import { PendingTransactions as PendingTransactionsType } from "../state/atoms";
 
-const PendingTransactions = ({
+export const PendingTransactions = ({
   pendingTransactions,
 }: {
   pendingTransactions: PendingTransactionsType;
@@ -9,9 +9,8 @@ const PendingTransactions = ({
     <div>
       {pendingTransactions.map((transaction, index) => (
         <div key={index}>
-          <p>Type: {transaction.type}</p>
-          <p>Targets: {transaction.details.vout.length}</p>
-          <p>Amount: {transaction.amount}</p>
+          {/* Targets: {transaction.details.vout.length} */}
+          <p>Sending: {Number(transaction.amount).toLocaleString()} sats</p>
         </div>
       ))}
     </div>

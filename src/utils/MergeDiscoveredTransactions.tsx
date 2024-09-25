@@ -2,9 +2,11 @@ import TrezorConnect, {
   AccountInfo,
   SignTransaction,
 } from "@trezor/connect-web";
-import { PendingTransactions } from "../state/atoms";
-import { accountInfoDummyData } from "./tests/data/accountInfoDummy";
-import { pendingTransactionsDummyData } from "./tests/data/pendingTransactionDummy";
+import { PendingTransactions, pendingTransactionsAtom } from "../state/atoms";
+// import { accountInfoDummyData } from "./tests/data/accountInfoDummy";
+// import { pendingTransactionsDummyData } from "./tests/data/pendingTransactionDummy";
+import { useAtomValue } from "jotai";
+import { accountInfoAtom } from "../state/atoms";
 
 type TransactionData = {
   inputs: TransactionInput[];
@@ -56,7 +58,7 @@ export const filterTransactionsByType = (
   return transactions.filter((transaction) => transaction.type === type);
 };
 
-//TODO: přidat info o původní transakci parent/child
+//TODO: Add parent/child to initial pending transactions
 export const transformTransactionsData = (
   transactions: PendingTransactions
 ): TransactionData => {
@@ -115,6 +117,37 @@ export const mergeChangeAddresses = (
     outputs: mergedOutputs,
   };
 };
+
+const adjustChangeOutputAmount = (
+  transactionData: TransactionData,
+  newFeeRate?: number
+): TransactionData => {
+  const { inputs, outputs, vsize } = transactionData;
+
+  const totalInputAmount = inputs.reduce((sum, input) => sum + input.amount, 0);
+
+  const totalOutputAmount = outputs
+    .filter((output) => !output.isOwn)
+    .reduce((sum, output) => sum + output.amount, 0);
+
+  const fee = newFeeRate ? vsize * newFeeRate : 0;
+  const updatedOutputs = outputs.map((output) => {
+    if (output.isOwn) {
+      return {
+        ...output,
+        amount: totalInputAmount - totalOutputAmount - fee,
+      };
+    }
+    return output;
+  });
+
+  return {
+    ...transactionData,
+    outputs: updatedOutputs,
+  };
+};
+
+// TODO - pokud je hodnota change outputu menší než dust, tak ji odstranit
 
 const updateChangeAddress = (
   transactionData: TransactionData,
@@ -370,6 +403,8 @@ const prepareForSigning = (
     script_type: input.scriptType,
   }));
 
+  console.log("prepared inputs: ", inputs);
+
   const outputs = [];
 
   for (const output of transactionData.outputs) {
@@ -397,73 +432,89 @@ const prepareForSigning = (
   };
 };
 
-const MergeDiscoveredTransactions = () => {
-  // const accountInfo = useAtomValue(accountInfoAtom);
-  const accountInfo = accountInfoDummyData;
-
+export const mergeDiscoveredTransactions = (
+  accountInfo: AccountInfo | null,
+  pendingTransactions: PendingTransactions
+) => {
   if (accountInfo === null) {
     return null;
   }
+
+  const keepSendOnly = filterTransactionsByType(pendingTransactions, "sent");
+  const transformedData = transformTransactionsData(keepSendOnly);
+
+  const oldTotalFee = keepSendOnly.reduce(
+    (acc, transaction) => acc + Number(transaction.fee),
+    0
+  );
+  console.log("totalFee: ", oldTotalFee);
+
+  const oldMaxFeeRate = Math.max(
+    ...keepSendOnly.map((transaction) => Number(transaction.feeRate))
+  );
+
+  console.log("maxFeeRate: ", oldMaxFeeRate);
+  const newFeeRate = oldMaxFeeRate + 1;
+  console.log("newFeeRate: ", newFeeRate);
+
+  const mergedChangeAddresses = mergeChangeAddresses(transformedData);
+  const updatedChangeAddress = updateChangeAddress(
+    mergedChangeAddresses,
+    accountInfo
+  );
+
+  const removedRedundantInputs = removeRedundantInputs(
+    updatedChangeAddress,
+    newFeeRate
+  );
+
+  const adjustedChangeOutputAmount = adjustChangeOutputAmount(
+    removedRedundantInputs,
+    newFeeRate
+  );
+
+  const addedInputPaths = addPathToInputs(
+    adjustedChangeOutputAmount,
+    accountInfo
+  );
+
+  const addedScriptTypes = addScriptTypes(addedInputPaths);
+
+  const toBeSignedTransaction = prepareForSigning(addedScriptTypes);
+  console.log("toBeSignedTransaction: ", toBeSignedTransaction);
+
+  return toBeSignedTransaction;
+};
+
+// TODO: Identify dependent transactions
+
+const MergeAndSignDiscoveredTransactions = () => {
+  const accountInfo = useAtomValue(accountInfoAtom);
+  const pendingTransactions = useAtomValue(pendingTransactionsAtom);
+
   const handleButtonClick = async () => {
-    const keepSendOnly = filterTransactionsByType(
-      pendingTransactionsDummyData,
-      "sent"
-    );
-    const transformedData = transformTransactionsData(keepSendOnly);
-
-    const oldTotalFee = keepSendOnly.reduce(
-      (acc, transaction) => acc + Number(transaction.fee),
-      0
-    );
-    console.log("totalFee: ", oldTotalFee);
-
-    const oldMaxFeeRate = Math.max(
-      ...keepSendOnly.map((transaction) => Number(transaction.feeRate))
+    const toBeSignedTransaction = mergeDiscoveredTransactions(
+      accountInfo,
+      pendingTransactions
     );
 
-    console.log("maxFeeRate: ", oldMaxFeeRate);
-    const newFeeRate = oldMaxFeeRate + 1;
-    console.log("newFeeRate: ", newFeeRate);
-
-    const mergedChangeAddresses = mergeChangeAddresses(transformedData);
-    const updatedChangeAddress = updateChangeAddress(
-      mergedChangeAddresses,
-      accountInfo
-    );
-
-    const removedRedundantInputs = removeRedundantInputs(
-      updatedChangeAddress,
-      newFeeRate
-    );
-
-    console.log("removedRedundantInputs: ", removedRedundantInputs);
-
-    const addedInputPaths = addPathToInputs(
-      removedRedundantInputs,
-      accountInfo
-    );
-
-    const addedScriptTypes = addScriptTypes(addedInputPaths);
-
-    const toBeSignedTransaction = prepareForSigning(addedScriptTypes);
-    console.log("toBeSignedTransaction: ", toBeSignedTransaction);
-
-    const signResult = await TrezorConnect.signTransaction(
-      toBeSignedTransaction
-    );
-    console.log("signResult: ", signResult);
-
-    // TODO: Identify dependent transactions
+    if (toBeSignedTransaction) {
+      const signResult = await TrezorConnect.signTransaction(
+        toBeSignedTransaction
+      );
+      console.log("signResult: ", signResult);
+    } else {
+      console.error("Failed to prepare transaction for signing.");
+    }
   };
 
   return (
     <>
       <div>
-        <p>Log merge of transactions</p>
         <button onClick={handleButtonClick}>Merge pending transactions</button>
       </div>
     </>
   );
 };
 
-export default MergeDiscoveredTransactions;
+export default MergeAndSignDiscoveredTransactions;

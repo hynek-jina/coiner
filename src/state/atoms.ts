@@ -158,13 +158,19 @@ export const utxoAtom = atom<Utxo[]>([
 //   );
 // });
 
-export const pendingTransactionsAtom = atom((get) => {
+export const pendingTransactionsAtom = atom<PendingTransactions>((get) => {
   const accountInfo = get(accountInfoAtom);
 
   return (
-    accountInfo?.history.transactions?.filter(
-      (transaction) => transaction.blockHeight === -1
-    ) || []
+    (accountInfo?.history.transactions
+      ?.filter((transaction) => transaction.blockHeight === -1)
+      .map((transaction) => ({
+        ...transaction,
+        blockTime: transaction.blockTime ?? 0, // Ensure blockTime is a number
+        amount: transaction.amount.toString(), // Ensure amount is a string
+        fee: transaction.fee.toString(), // Ensure fee is a string
+        feeRate: transaction.feeRate?.toString(), // Ensure feeRate is a string
+      })) as PendingTransaction[]) || []
   );
 });
 
@@ -222,9 +228,7 @@ export const totalAmountAtom = atom((get) => {
   return utxos.reduce((sum, utxo) => sum + utxo.amount, 0);
 });
 
-export const xpubAtom = atom<string>(
-  "vpub5Z1dr7Tk5iB1HP9Vtz3jM3an1eFnigrQxyLHnG1casbNCrTWrqLfdoFjr11q3xe3nGnrGezcZQCxusZAWWC4drqVWqaskuAEjnQVAN5YVRk"
-);
+export const xpubAtom = atom<string>("");
 
 export const mempoolFeesAtom = atom<MempoolFees>({
   fastestFee: 0,

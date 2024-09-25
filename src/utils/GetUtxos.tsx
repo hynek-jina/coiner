@@ -12,14 +12,6 @@ import {
 } from "../state/atoms";
 import { fetchMempoolFees } from "./GetMempoolFees";
 
-// TrezorConnect.init({
-//   lazyLoad: true, // this param will prevent iframe injection until TrezorConnect.method will be called
-//   manifest: {
-//     email: "developer@xyz.com",
-//     appUrl: "http://your.application.com",
-//   },
-// });
-
 const GetUtxos = () => {
   // const setUtxos = useSetAtom(utxoAtom);
   const [changeUtxos, setChangeUtxos] = useAtom(changeUtxoAtom);

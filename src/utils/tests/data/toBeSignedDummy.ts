@@ -1,6 +1,14 @@
 export const toBeSignedDummy = {
   inputs: [
     {
+      address_n: [2147483732, 2147483649, 2147483648, 1, 54],
+      prev_index: 1,
+      prev_hash:
+        "78131c580c9e02a42443a900fe5b49729005543b312231208eee95a724101348",
+      amount: 11185760,
+      script_type: "SPENDWITNESS",
+    },
+    {
       address_n: [2147483732, 2147483649, 2147483648, 1, 57],
       prev_index: 1,
       prev_hash:
@@ -12,17 +20,15 @@ export const toBeSignedDummy = {
   outputs: [
     {
       address_n: [2147483732, 2147483649, 2147483648, 1, 60],
-      amount: 7199225,
+      amount: 18384763,
       script_type: "PAYTOWITNESS",
     },
     {
-      // address_n: [null],
       address: "tb1qwfyjmundzlw75kya0weaj2jv457lgl6mrd45mj",
       amount: 1000000,
       script_type: "PAYTOWITNESS",
     },
     {
-      //   address_n: [null],
       address: "tb1qyqhhy2amy2uzm5thjmwvyjqql4wemfnmsuu355",
       amount: 1000000,
       script_type: "PAYTOWITNESS",

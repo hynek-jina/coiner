@@ -3,19 +3,22 @@ import * as d3 from "d3";
 import { useAtom, useAtomValue } from "jotai";
 import React, { useEffect, useRef } from "react";
 import {
-  availableBalanceAtom,
+  // availableBalanceAtom,
   totalAmountAtom,
   utxoAtom,
 } from "../state/atoms";
+import {
+  BubbleChartContainer,
+  BubbleChartSubtitle,
+  BubbleChartSvg,
+  BubbleChartTitle,
+} from "../theme";
 
 const BubbleChart: React.FC = () => {
-  // const defaultUtxos = useAtomValue(utxoAtom);
-  // const [utxos, setUtxos] = useState<Utxo[]>(defaultUtxos);
   const [utxos, setUtxos] = useAtom(utxoAtom);
   const svgRef = useRef<SVGSVGElement | null>(null);
-  // const [selectedValue, setSelectedValue] = useState<number | null>(null);
   const totalAmount = useAtomValue(totalAmountAtom);
-  const availableBalance = useAtomValue(availableBalanceAtom);
+  // const availableBalance = useAtomValue(availableBalanceAtom);
 
   useEffect(() => {
     if (!svgRef.current) return;
@@ -33,14 +36,26 @@ const BubbleChart: React.FC = () => {
         )
       );
     };
+
     const bubble = d3
-      .pack<{ name: string; amount: number; txid: string; vout: number }>()
+      .pack<{
+        selected: any;
+        name: string;
+        amount: number;
+        txid: string;
+        vout: number;
+      }>()
       .size([width, height])
       .padding(3);
 
-    // Adjust the type of root
     const root = d3
-      .hierarchy<{ name: string; amount: number; txid: string; vout: number }>({
+      .hierarchy<{
+        selected: any;
+        name: string;
+        amount: number;
+        txid: string;
+        vout: number;
+      }>({
         children: utxos,
       } as any)
       .sum((d) => d.amount);
@@ -49,6 +64,30 @@ const BubbleChart: React.FC = () => {
 
     svg.selectAll("g").remove(); // Clear any existing elements
 
+    const defs = svg.append("defs");
+
+    // Define gradients
+    defs
+      .selectAll("radialGradient")
+      .data(nodes)
+      .enter()
+      .append("radialGradient")
+      .attr("id", (d, i) => `gradient-${i}`)
+      .attr("cx", "50%")
+      .attr("cy", "50%")
+      .attr("r", "50%")
+      .attr("fx", "50%")
+      .attr("fy", "50%")
+      .selectAll("stop")
+      .data([
+        { offset: "0%", color: "#4682b4" },
+        { offset: "100%", color: "#40C1CD" },
+      ])
+      .enter()
+      .append("stop")
+      .attr("offset", (d) => d.offset)
+      .attr("stop-color", (d) => d.color);
+
     const node = svg
       .selectAll("g")
       .data(nodes)
@@ -56,21 +95,20 @@ const BubbleChart: React.FC = () => {
       .append("g")
       .attr("transform", (d) => `translate(${d.x},${d.y})`)
       .on("click", function (event, d) {
-        console.log("hodnota d", d);
-        // setSelectedValue(d.data.amount);
-
         handleBubbleClick(d.data.txid, d.data.vout);
       });
 
     node
       .append("circle")
+      .attr("class", "bubble")
       .attr("r", (d) => d.r)
-      .attr("fill", "steelblue")
-      .attr("stroke", "black")
-      .attr("stroke-width", 1);
+      .attr("fill", (d, i) =>
+        d.data.selected ? "#4682B4" : `url(#gradient-${i})`
+      );
 
     node
       .append("text")
+      .attr("class", "bubble-text")
       .attr("dy", ".3em")
       .attr("text-anchor", "middle")
       .attr("fill", "white")
@@ -80,23 +118,14 @@ const BubbleChart: React.FC = () => {
   }, [utxos, setUtxos]);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100vh",
-      }}
-    >
-      <h1>{totalAmount.toLocaleString()}</h1>{" "}
-      <p> Available {availableBalance.toLocaleString()} sats</p>
-      <svg ref={svgRef} width="800" height="600"></svg>
-      {/* {selectedValue !== null && (
-        <p>Selected value: {selectedValue.toLocaleString("cs-CZ")}</p>
-      )}{" "} */}
-      {/* Available UTXOS: {JSON.stringify(utxos)} */}
-    </div>
+    <BubbleChartContainer>
+      <BubbleChartSubtitle>Balance:</BubbleChartSubtitle>
+      <BubbleChartTitle>{totalAmount.toLocaleString()}</BubbleChartTitle>
+      {/* <BubbleChartSubtitle>
+        Available {availableBalance.toLocaleString()} sats
+      </BubbleChartSubtitle> */}
+      <BubbleChartSvg ref={svgRef} width="800" height="600"></BubbleChartSvg>
+    </BubbleChartContainer>
   );
 };
 

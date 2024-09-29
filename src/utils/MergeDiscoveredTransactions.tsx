@@ -7,6 +7,7 @@ import { PendingTransactions, pendingTransactionsAtom } from "../state/atoms";
 // import { pendingTransactionsDummyData } from "./tests/data/pendingTransactionDummy";
 import { useAtomValue } from "jotai";
 import { accountInfoAtom } from "../state/atoms";
+import "./PendingTransactions.css";
 
 type TransactionData = {
   inputs: TransactionInput[];
@@ -511,7 +512,9 @@ const MergeAndSignDiscoveredTransactions = () => {
   return (
     <>
       <div>
-        <button onClick={handleButtonClick}>Merge pending transactions</button>
+        <button className="primary-button button" onClick={handleButtonClick}>
+          💪 Merge
+        </button>
       </div>
     </>
   );

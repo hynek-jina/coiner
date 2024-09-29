@@ -1,6 +1,8 @@
 import TrezorConnect, { AccountInfo } from "@trezor/connect-web";
 import { useAtom, useSetAtom } from "jotai";
 import { accountInfoAtom, Utxo, utxoAtom, xpubAtom } from "../state/atoms";
+import { ButtonLink } from "../theme";
+import "./AccountDiscovery.css";
 
 export const getXpub = async (path: string): Promise<string> => {
   const receivedPublicKey = await TrezorConnect.getPublicKey({
@@ -76,9 +78,9 @@ const DoAccountDiscovery = () => {
   };
 
   const handleDiscoveryWithoutTrezor = async () => {
-    setXpub(
-      "vpub5Z1dr7Tk5iB1HP9Vtz3jM3an1eFnigrQxyLHnG1casbNCrTWrqLfdoFjr11q3xe3nGnrGezcZQCxusZAWWC4drqVWqaskuAEjnQVAN5YVRk"
-    );
+    // setXpub(
+    //   "vpub5Z1dr7Tk5iB1HP9Vtz3jM3an1eFnigrQxyLHnG1casbNCrTWrqLfdoFjr11q3xe3nGnrGezcZQCxusZAWWC4drqVWqaskuAEjnQVAN5YVRk"
+    // );
     const accountInfo = await getAccountInfo(xpub);
     if (accountInfo) {
       setAccountInfo(accountInfo);
@@ -92,13 +94,24 @@ const DoAccountDiscovery = () => {
 
   return (
     <>
-      <div>
-        <button onClick={handleCompleteDiscovery}>
-          🔍 Discover Your Coins
-        </button>
-        <button onClick={handleDiscoveryWithoutTrezor}>
-          Fast discovery (without Trezor)
-        </button>
+      <div className="account-discovery-container">
+        {!xpub && (
+          <div>
+            <h2>Discover your coins</h2>
+            <p>
+              At first you need to connect your Trezor. Then click on the button
+              below
+            </p>
+            <button onClick={handleCompleteDiscovery}>
+              🔍 Discover Your Coins
+            </button>
+          </div>
+        )}
+        {xpub && (
+          <ButtonLink onClick={handleDiscoveryWithoutTrezor}>
+            ⟳ Refresh Data
+          </ButtonLink>
+        )}
       </div>
     </>
   );

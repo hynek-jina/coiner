@@ -6,16 +6,17 @@ import DoAccountDiscovery from "./utils/AccountDiscovery";
 // import ComposeTransaction from "./utils/ComposeTransaction";
 // import FindPendingTxs from "./utils/FindPendingTxs";
 // import GetUtxos from "./utils/GetUtxos";
-import MergeDiscoveredTransactions from "./utils/MergeDiscoveredTransactions";
 import PendingTransactions from "./utils/PendingTransactions";
 // import SignTransaction from "./utils/SignTransaction";
 // import { pendingTransactionsDummyData } from "./utils/tests/data/pendingTransactionDummy";
 import { useEffect } from "react";
 import { pendingTransactionsAtom } from "./state/atoms";
+// import { pendingTransactionsDummyData } from "./utils/tests/data/pendingTransactionDummy";
 
 function App() {
   const [xpub] = useAtom(xpubAtom);
   const [pendingTransactions] = useAtom(pendingTransactionsAtom);
+  // const pendingTransactions = pendingTransactionsDummyData;
 
   useEffect(() => {
     TrezorConnect.init({
@@ -29,32 +30,21 @@ function App() {
 
   return (
     <div
-      style={{ backgroundColor: "black", color: "white", minHeight: "100vh" }}
+      style={{ backgroundColor: "#212120", color: "white", minHeight: "100vh" }}
     >
       {xpub ? (
-        <div style={{ border: "2px solid blue" }}>
-          <b>BubbleChart</b>
+        <div>
+          <b>Coiner</b>
           <BubbleChart />
         </div>
       ) : (
         <></>
       )}
-      <div>
-        <b>Account Discovery</b>
-        <DoAccountDiscovery />
-      </div>
 
-      {/* <div style={{ border: "2px solid blue" }}>
-        <b>FindPendingTxs</b>
-        <FindPendingTxs />
-      </div> */}
-      <div style={{ border: "2px solid blue" }}>
-        <b>Pending Transactions</b>
+      <DoAccountDiscovery />
+
+      <div>
         <PendingTransactions pendingTransactions={pendingTransactions} />
-      </div>
-      <div style={{ border: "2px solid blue" }}>
-        <b>MergeDiscoveredTransactions</b>
-        <MergeDiscoveredTransactions />
       </div>
     </div>
   );

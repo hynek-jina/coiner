@@ -1,0 +1,7 @@
+.account-discovery-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Zarovnání do středu horizontálně */
+  justify-content: center; /* Zarovnání do středu vertikálně */
+  height: 100%; /* Zajištění, že kontejner zabírá celou výšku rodiče */
+}

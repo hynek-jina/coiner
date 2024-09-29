@@ -1,0 +1,34 @@
+.bubble-chart-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  font-family: "Arial", sans-serif;
+}
+
+.bubble-chart-title {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.bubble-chart-subtitle {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.bubble {
+  cursor: pointer;
+  transition: transform 0.2s ease-in-out;
+}
+
+.bubble:hover {
+  transform: scale(1.05);
+}
+
+.bubble-text {
+  font-size: 0.8rem;
+  pointer-events: none;
+}

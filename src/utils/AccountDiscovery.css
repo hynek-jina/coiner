@@ -1,7 +1,16 @@
 .account-discovery-container {
   display: flex;
   flex-direction: column;
-  align-items: center; /* Zarovnání do středu horizontálně */
-  justify-content: center; /* Zarovnání do středu vertikálně */
-  height: 100%; /* Zajištění, že kontejner zabírá celou výšku rodiče */
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.link {
+  color: #40c1cd;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
 }

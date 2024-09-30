@@ -109,7 +109,10 @@ const DoAccountDiscovery = () => {
 
             <p>
               If you don't have a Trezor yet, order one{" "}
-              <a href="https://affil.trezor.io/SHcK">here</a>.
+              <a href="https://affil.trezor.io/SHcK" className="link">
+                here
+              </a>
+              .
             </p>
             <img src={trezorImage} alt="Trezor Safe 5" />
           </div>

@@ -428,7 +428,7 @@ const prepareForSigning = (
     inputs,
     outputs,
     coin: "test",
-    push: false,
+    push: true,
     amountUnit: 3,
   };
 };

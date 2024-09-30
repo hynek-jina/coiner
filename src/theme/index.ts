@@ -15,12 +15,14 @@ export const Button = styled.button<{ disabled?: boolean }>`
   padding: 10px;
   background-color: ${({ disabled }) =>
     disabled ? colors.disabled : colors.primary};
-  border-radius: 5px;
+  border-radius: 12px;
   flex: 1;
   color: ${colors.buttonText};
   font-weight: bold;
   text-align: center;
   cursor: pointer;
+  border: none;
+  shadow: none;
 `;
 
 export const SecondaryButton = styled(Button)`
@@ -34,7 +36,7 @@ export const ButtonText = styled.span`
 `;
 
 export const ButtonLink = styled(Button)`
-  // text-color: ${colors.primary}
+  color: ${colors.textSecondary};
   background-color: transparent;
   border: none;
   text-decoration: none;
@@ -56,6 +58,14 @@ export const BubbleChartContainer = styled.div`
   font-weight: ;
 `;
 
+export const AppName = styled.h1`
+  font-size: 1.4rem;
+  color: ${colors.textHeader};
+  margin: 0;
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+`;
+
 export const BubbleChartTitle = styled.h1`
   font-size: 2rem;
   color: #34acb9;
@@ -65,7 +75,7 @@ export const BubbleChartTitle = styled.h1`
 
 export const BubbleChartSubtitle = styled.p`
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.3);
+  color: ${colors.textSecondary};
 `;
 
 export const BubbleChartSvg = styled.svg`

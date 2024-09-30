@@ -1,7 +1,8 @@
 import TrezorConnect, { AccountInfo } from "@trezor/connect-web";
 import { useAtom, useSetAtom } from "jotai";
+import trezorImage from "../images/TS5.png";
 import { accountInfoAtom, Utxo, utxoAtom, xpubAtom } from "../state/atoms";
-import { ButtonLink } from "../theme";
+import { Button, ButtonLink } from "../theme";
 import "./AccountDiscovery.css";
 
 export const getXpub = async (path: string): Promise<string> => {
@@ -102,9 +103,15 @@ const DoAccountDiscovery = () => {
               At first you need to connect your Trezor. Then click on the button
               below
             </p>
-            <button onClick={handleCompleteDiscovery}>
+            <Button onClick={handleCompleteDiscovery}>
               🔍 Discover Your Coins
-            </button>
+            </Button>
+
+            <p>
+              If you don't have a Trezor yet, order one{" "}
+              <a href="https://affil.trezor.io/SHcK">here</a>.
+            </p>
+            <img src={trezorImage} alt="Trezor Safe 5" />
           </div>
         )}
         {xpub && (

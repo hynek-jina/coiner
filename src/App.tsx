@@ -12,10 +12,13 @@ import PendingTransactions from "./utils/PendingTransactions";
 import { useEffect } from "react";
 import { pendingTransactionsAtom } from "./state/atoms";
 // import { pendingTransactionsDummyData } from "./utils/tests/data/pendingTransactionDummy";
+import { AppName } from "./theme/index";
+import { filterTransactionsByType } from "./utils/MergeDiscoveredTransactions";
 
 function App() {
   const [xpub] = useAtom(xpubAtom);
   const [pendingTransactions] = useAtom(pendingTransactionsAtom);
+  const sendOnly = filterTransactionsByType(pendingTransactions, "sent");
   // const pendingTransactions = pendingTransactionsDummyData;
 
   useEffect(() => {
@@ -32,19 +35,13 @@ function App() {
     <div
       style={{ backgroundColor: "#212120", color: "white", minHeight: "100vh" }}
     >
-      {xpub ? (
-        <div>
-          <b>Coiner</b>
-          <BubbleChart />
-        </div>
-      ) : (
-        <></>
-      )}
+      <AppName>Coiner</AppName>
+      {xpub ? <BubbleChart /> : <></>}
 
       <DoAccountDiscovery />
 
       <div>
-        <PendingTransactions pendingTransactions={pendingTransactions} />
+        <PendingTransactions pendingTransactions={sendOnly} />
       </div>
     </div>
   );

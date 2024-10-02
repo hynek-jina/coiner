@@ -88,6 +88,13 @@ export interface MempoolFees {
   minimumFee: number;
 }
 
+export const coinAtom = atom<string>("test");
+
+export const pathAtom = atom<string>((get) => {
+  const coin = get(coinAtom);
+  return coin === "test" ? "m/84'/1'/0'/0/0" : "m/84'/0'/0'/0/0";
+});
+
 export const transactionTemplateAtom = atom<SignTransaction>({
   inputs: [],
   outputs: [],

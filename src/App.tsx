@@ -1,24 +1,22 @@
 import TrezorConnect from "@trezor/connect-web";
-import { useAtom } from "jotai";
-import BubbleChart from "./components/BubbleChart";
-import { xpubAtom } from "./state/atoms";
-import DoAccountDiscovery from "./utils/AccountDiscovery";
 // import ComposeTransaction from "./utils/ComposeTransaction";
 // import FindPendingTxs from "./utils/FindPendingTxs";
 // import GetUtxos from "./utils/GetUtxos";
-import PendingTransactions from "./utils/PendingTransactions";
 // import SignTransaction from "./utils/SignTransaction";
 // import { pendingTransactionsDummyData } from "./utils/tests/data/pendingTransactionDummy";
 import { useEffect } from "react";
-import { pendingTransactionsAtom } from "./state/atoms";
+// import { pendingTransactionsAtom } from "./state/atoms";
 // import { pendingTransactionsDummyData } from "./utils/tests/data/pendingTransactionDummy";
-import { AppName } from "./theme/index";
-import { filterTransactionsByType } from "./utils/MergeDiscoveredTransactions";
+import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
+import Navbar from "./components/Navbar";
+// import { filterTransactionsByType } from "./utils/MergeDiscoveredTransactions";
+import Coins from "./pages/coins";
+import Settings from "./pages/Settings";
 
 function App() {
-  const [xpub] = useAtom(xpubAtom);
-  const [pendingTransactions] = useAtom(pendingTransactionsAtom);
-  const sendOnly = filterTransactionsByType(pendingTransactions, "sent");
+  // const [xpub] = useAtom(xpubAtom);
+  // const [pendingTransactions] = useAtom(pendingTransactionsAtom);
+  // const sendOnly = filterTransactionsByType(pendingTransactions, "sent");
   // const pendingTransactions = pendingTransactionsDummyData;
 
   useEffect(() => {
@@ -35,14 +33,15 @@ function App() {
     <div
       style={{ backgroundColor: "#212120", color: "white", minHeight: "100vh" }}
     >
-      <AppName>Coiner</AppName>
-      {xpub ? <BubbleChart /> : <></>}
-
-      <DoAccountDiscovery />
-
-      <div>
-        <PendingTransactions pendingTransactions={sendOnly} />
-      </div>
+      <Router>
+        <Navbar />
+        <div style={{ paddingTop: "4rem" }}>
+          <Routes>
+            <Route path="/" element={<Coins />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </div>
+      </Router>
     </div>
   );
 }

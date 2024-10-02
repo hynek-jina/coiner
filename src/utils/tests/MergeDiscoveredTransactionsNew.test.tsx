@@ -7,7 +7,8 @@ describe("Merge of Pending transactions", () => {
   it("Do the proper merge of pending transactions", () => {
     const toBeSignedData = mergeDiscoveredTransactions(
       accountInfoDummyData,
-      pendingTransactionsDummyData
+      pendingTransactionsDummyData,
+      "test"
     );
     expect(toBeSignedData).toEqual(toBeSignedDummy);
   });

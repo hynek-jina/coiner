@@ -1,14 +1,21 @@
 import TrezorConnect, { AccountInfo } from "@trezor/connect-web";
-import { useAtom, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import trezorImage from "../images/TS5.png";
-import { accountInfoAtom, Utxo, utxoAtom, xpubAtom } from "../state/atoms";
-import { Button, ButtonLink } from "../theme";
+import {
+  accountInfoAtom,
+  coinAtom,
+  pathAtom,
+  Utxo,
+  utxoAtom,
+  xpubAtom,
+} from "../state/atoms";
+import { Button, ButtonLink, PageContainer } from "../theme";
 import "./AccountDiscovery.css";
 
-export const getXpub = async (path: string): Promise<string> => {
+export const getXpub = async (path: string, coin: string): Promise<string> => {
   const receivedPublicKey = await TrezorConnect.getPublicKey({
     path: path,
-    coin: "test",
+    coin: coin,
   });
   if (receivedPublicKey.success && receivedPublicKey.payload.xpubSegwit) {
     console.log(receivedPublicKey);
@@ -19,11 +26,12 @@ export const getXpub = async (path: string): Promise<string> => {
 };
 
 export const getAccountInfo = async (
-  xpub: string
+  xpub: string,
+  coin: string
 ): Promise<AccountInfo | null> => {
   const discovery = await TrezorConnect.getAccountInfo({
     descriptor: xpub,
-    coin: "test",
+    coin: coin,
     details: "txs", //"txids",
   });
   if (discovery.success) {
@@ -53,17 +61,19 @@ export const mapInitialUtxoAtom = (accountInfo: AccountInfo): Utxo[] | null => {
 
 const DoAccountDiscovery = () => {
   const [xpub, setXpub] = useAtom(xpubAtom);
-  const path = "m/84'/1'/0'";
-  const setAccountInfo = useSetAtom(accountInfoAtom);
   const [utxos, setUtxos] = useAtom(utxoAtom);
+  const setAccountInfo = useSetAtom(accountInfoAtom);
+  const coin = useAtomValue(coinAtom);
+  // const path = "m/84'/1'/0'";
+  const path = useAtomValue(pathAtom);
 
   const handleCompleteDiscovery = async () => {
     try {
-      const receivedXpub = await getXpub(path);
+      const receivedXpub = await getXpub(path, coin);
       setXpub(receivedXpub);
 
       if (receivedXpub) {
-        const accountInfo = await getAccountInfo(xpub);
+        const accountInfo = await getAccountInfo(xpub, coin);
         if (accountInfo) {
           setAccountInfo(accountInfo);
           const initialUtxoSet = mapInitialUtxoAtom(accountInfo);
@@ -82,7 +92,7 @@ const DoAccountDiscovery = () => {
     // setXpub(
     //   "vpub5Z1dr7Tk5iB1HP9Vtz3jM3an1eFnigrQxyLHnG1casbNCrTWrqLfdoFjr11q3xe3nGnrGezcZQCxusZAWWC4drqVWqaskuAEjnQVAN5YVRk"
     // );
-    const accountInfo = await getAccountInfo(xpub);
+    const accountInfo = await getAccountInfo(xpub, coin);
     if (accountInfo) {
       setAccountInfo(accountInfo);
       const initialUtxoSet = mapInitialUtxoAtom(accountInfo);
@@ -95,7 +105,7 @@ const DoAccountDiscovery = () => {
 
   return (
     <>
-      <div className="account-discovery-container">
+      <PageContainer>
         {!xpub && (
           <div>
             <h2>Discover your coins</h2>
@@ -122,7 +132,7 @@ const DoAccountDiscovery = () => {
             ⟳ Refresh Data
           </ButtonLink>
         )}
-      </div>
+      </PageContainer>
     </>
   );
 };

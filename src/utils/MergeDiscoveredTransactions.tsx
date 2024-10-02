@@ -6,7 +6,7 @@ import { PendingTransactions, pendingTransactionsAtom } from "../state/atoms";
 // import { accountInfoDummyData } from "./tests/data/accountInfoDummy";
 // import { pendingTransactionsDummyData } from "./tests/data/pendingTransactionDummy";
 import { useAtomValue } from "jotai";
-import { accountInfoAtom } from "../state/atoms";
+import { accountInfoAtom, coinAtom } from "../state/atoms";
 import "./PendingTransactions.css";
 
 type TransactionData = {
@@ -394,7 +394,8 @@ const getAddressN = (path: string): number[] => {
 };
 
 const prepareForSigning = (
-  transactionData: TransactionData
+  transactionData: TransactionData,
+  coin: string
 ): SignTransaction => {
   const inputs = transactionData.inputs.map((input) => ({
     address_n: getAddressN(input.path),
@@ -427,7 +428,7 @@ const prepareForSigning = (
   return {
     inputs,
     outputs,
-    coin: "test",
+    coin: coin,
     push: true,
     amountUnit: 3,
   };
@@ -435,7 +436,8 @@ const prepareForSigning = (
 
 export const mergeDiscoveredTransactions = (
   accountInfo: AccountInfo | null,
-  pendingTransactions: PendingTransactions
+  pendingTransactions: PendingTransactions,
+  coin: string
 ) => {
   if (accountInfo === null) {
     return null;
@@ -481,7 +483,7 @@ export const mergeDiscoveredTransactions = (
 
   const addedScriptTypes = addScriptTypes(addedInputPaths);
 
-  const toBeSignedTransaction = prepareForSigning(addedScriptTypes);
+  const toBeSignedTransaction = prepareForSigning(addedScriptTypes, coin);
   console.log("toBeSignedTransaction: ", toBeSignedTransaction);
 
   return toBeSignedTransaction;
@@ -490,13 +492,15 @@ export const mergeDiscoveredTransactions = (
 // TODO: Identify dependent transactions
 
 const MergeAndSignDiscoveredTransactions = () => {
+  const coin = useAtomValue(coinAtom);
   const accountInfo = useAtomValue(accountInfoAtom);
   const pendingTransactions = useAtomValue(pendingTransactionsAtom);
 
   const handleButtonClick = async () => {
     const toBeSignedTransaction = mergeDiscoveredTransactions(
       accountInfo,
-      pendingTransactions
+      pendingTransactions,
+      coin
     );
 
     if (toBeSignedTransaction) {

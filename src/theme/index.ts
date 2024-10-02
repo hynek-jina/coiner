@@ -23,6 +23,7 @@ export const Button = styled.button<{ disabled?: boolean }>`
   cursor: pointer;
   border: none;
   shadow: none;
+  width: 280px;
 `;
 
 export const SecondaryButton = styled(Button)`
@@ -61,9 +62,6 @@ export const BubbleChartContainer = styled.div`
 export const AppName = styled.h1`
   font-size: 1.4rem;
   color: ${colors.textHeader};
-  margin: 0;
-  padding: 1.2rem;
-  margin-bottom: 1rem;
 `;
 
 export const BubbleChartTitle = styled.h1`
@@ -94,4 +92,20 @@ export const Bubble = styled.circle`
 export const BubbleText = styled.text`
   font-size: 0.8rem;
   pointer-events: none;
+`;
+
+export const PageContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 800px;
+  align-items: left;
+  justify-content: center;
+  margin: 0 auto;
+`;
+
+export const Row = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 20rem;
 `;

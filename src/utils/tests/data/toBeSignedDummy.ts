@@ -35,6 +35,6 @@ export const toBeSignedDummy = {
     },
   ],
   coin: "test",
-  push: false,
+  push: true,
   amountUnit: 3,
 };

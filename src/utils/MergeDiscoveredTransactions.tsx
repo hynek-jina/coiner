@@ -175,37 +175,51 @@ const updateChangeAddress = (
   };
 };
 
+type ScriptTypeShortened = string;
+type ScriptType = string;
+type AddressInfo = { vSize: number; scriptType: ScriptType };
+
+type AddressInfos = Record<ScriptTypeShortened, AddressInfo>;
+
+const inputMap: AddressInfos = {
+  bc1p: { vSize: 57.5, scriptType: "SPENDTAPROOT" },
+  tb1p: { vSize: 57.5, scriptType: "SPENDTAPROOT" },
+  bc1: { vSize: 68, scriptType: "SPENDWITNESS" },
+  tb1: { vSize: 68, scriptType: "SPENDWITNESS" },
+  "3": { vSize: 91, scriptType: "SPENDP2SHWITNESS" },
+  "2": { vSize: 91, scriptType: "SPENDP2SHWITNESS" },
+  "1": { vSize: 148, scriptType: "SPENDADDRESS" },
+  m: { vSize: 148, scriptType: "SPENDADDRESS" },
+  n: { vSize: 148, scriptType: "SPENDADDRESS" },
+};
+const outputMap: AddressInfos = {
+  bc1p: { vSize: 43, scriptType: "PAYTOTAPROOT" },
+  tb1p: { vSize: 43, scriptType: "PAYTOTAPROOT" },
+  bc1: { vSize: 31, scriptType: "PAYTOWITNESS" },
+  tb1: { vSize: 31, scriptType: "PAYTOWITNESS" },
+  "3": { vSize: 32, scriptType: "PAYTOP2SHWITNESS" },
+  "2": { vSize: 32, scriptType: "PAYTOP2SHWITNESS" },
+  "1": { vSize: 34, scriptType: "PAYTOADDRESS" },
+  m: { vSize: 34, scriptType: "PAYTOADDRESS" },
+  n: { vSize: 34, scriptType: "PAYTOADDRESS" },
+};
+
 const getAddressVSize = (address: string, type: "input" | "output"): number => {
-  if (type === "input") {
-    if (address.startsWith("bc1p") || address.startsWith("tb1p")) {
-      return 57.5; // Taproot input size
-    } else if (address.startsWith("bc1") || address.startsWith("tb1")) {
-      return 68; // SegWit input size
-    } else if (address.startsWith("3") || address.startsWith("2")) {
-      return 91; // P2SH input size
-    } else if (
-      address.startsWith("1") ||
-      address.startsWith("m") ||
-      address.startsWith("n")
-    ) {
-      return 148; // Legacy input size
-    }
-  } else if (type === "output") {
-    if (address.startsWith("bc1p") || address.startsWith("tb1p")) {
-      return 43; // Taproot output size
-    } else if (address.startsWith("bc1") || address.startsWith("tb1")) {
-      return 31; // SegWit output size
-    } else if (address.startsWith("3") || address.startsWith("2")) {
-      return 32; // P2SH output size
-    } else if (
-      address.startsWith("1") ||
-      address.startsWith("m") ||
-      address.startsWith("n")
-    ) {
-      return 34; // Legacy output size
-    }
-  }
-  return 0; // Default size if address type is unknown
+  const getInfo = (data: AddressInfos) => {
+    // return Object.keys(data).reduce<AddressInfo | null>((acc, key) => {
+    //   if (address.startsWith(key)) {
+    //     return inputMap[key];
+    //   }
+    //   return acc;
+    // }, null);
+    const resultKey = Object.keys(data).find((key) => {
+      return address.startsWith(key);
+    });
+    return resultKey ? data[resultKey] : null;
+  };
+
+  const addressInfo = getInfo(type === "input" ? inputMap : outputMap);
+  return addressInfo?.vSize ?? 0;
 };
 
 const getInputScriptType = (address: string): inputScriptType => {
@@ -405,7 +419,7 @@ const prepareForSigning = (
     script_type: input.scriptType,
   }));
 
-  console.log("prepared inputs: ", inputs);
+  // console.log("prepared inputs: ", inputs);
 
   const outputs = [];
 
@@ -484,7 +498,7 @@ export const mergeDiscoveredTransactions = (
   const addedScriptTypes = addScriptTypes(addedInputPaths);
 
   const toBeSignedTransaction = prepareForSigning(addedScriptTypes, coin);
-  console.log("toBeSignedTransaction: ", toBeSignedTransaction);
+  // console.log("toBeSignedTransaction: ", toBeSignedTransaction);
 
   return toBeSignedTransaction;
 };

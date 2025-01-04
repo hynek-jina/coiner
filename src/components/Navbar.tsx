@@ -13,6 +13,9 @@ const Navbar = () => {
           <Link to="/">Coins</Link>
         </li>
         <li className="navbar-item">
+          <Link to="/experimental">Experimental</Link>
+        </li>
+        <li className="navbar-item">
           <Link to="/settings">Settings</Link>
         </li>
       </ul>

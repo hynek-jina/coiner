@@ -2,6 +2,8 @@ import { PendingTransactions as PendingTransactionsType } from "../state/atoms";
 import MergeAndSignDiscoveredTransactions from "./MergeDiscoveredTransactions";
 import "./PendingTransactions.css";
 
+// This component hadnle UI of the pending transactions
+
 export const PendingTransactions = ({
   pendingTransactions,
 }: {
@@ -30,6 +32,7 @@ export const PendingTransactions = ({
               </div>
             </div>
           ))}
+
           {pendingTransactions.length > 1 && (
             <div className="buttons-next-to-each-other">
               {/* <button className="secondary-button button" disabled>

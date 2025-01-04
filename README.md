@@ -12,8 +12,8 @@ You will need to purchase a [Trezor](https://trezor.io/) device to use Coiner ap
 - [x] Merge pending transactions
 - [ ] Include foreign child transaction in merging
 - [ ] Cancel pending transactions
-- [ ] Bitcoin mainnet
-- [ ] Select account
+- [x] Bitcoin mainnet
+- [x] Select account
 
 ### 🚫 Not planned features (as of now)
 

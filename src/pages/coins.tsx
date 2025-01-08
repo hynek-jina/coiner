@@ -29,16 +29,20 @@ const Coins = () => {
 
       <div>
         <div className="pending-transactions-container">
-          <AddDescendatsTransactionButton />
-          <CalculateSepareTransactionsStatsButton />
-          <ConstructMergedTransactionButton />
-          <PendingTransactions
-            pendingTransactions={
-              extendedTransactions !== null
-                ? extendedTransactions
-                : filteredTransactions
-            }
-          />
+          {filteredTransactions.length > 0 && (
+            <>
+              <AddDescendatsTransactionButton />
+              <CalculateSepareTransactionsStatsButton />
+              <ConstructMergedTransactionButton />
+              <PendingTransactions
+                pendingTransactions={
+                  extendedTransactions !== null
+                    ? extendedTransactions
+                    : filteredTransactions
+                }
+              />
+            </>
+          )}
           {((extendedTransactions && extendedTransactions.length > 1) ||
             filteredTransactions.length > 1) && <ComparissonTable />}
           {toBeSignedTransaction && (

@@ -3,14 +3,14 @@ import { PendingTransaction } from "../state/atoms";
 
 // Transform getTransaction data from mempool.space API to pending transactions structure
 
-const ConvertTransaction = (tx: Tx): PendingTransaction => {
+const convertTransaction = (tx: Tx): PendingTransaction => {
   return {
-    type: "sent",
+    type: "descendant",
     txid: tx.txid,
     // hex, blockTime, blockHeight
     lockTime: tx.locktime,
-    amount: tx.vout.reduce((acc, output) => acc + output.value, 0).toString(),
-    // amount: "0",
+    // amount: tx.vout.reduce((acc, output) => acc + output.value, 0).toString(),
+    amount: "",
     fee: tx.fee.toString(),
     vsize: tx.weight / 4,
     feeRate: (tx.fee / (tx.weight / 4)).toFixed(1).toString(),
@@ -49,4 +49,4 @@ const ConvertTransaction = (tx: Tx): PendingTransaction => {
   };
 };
 
-export default ConvertTransaction;
+export default convertTransaction;

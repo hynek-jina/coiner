@@ -1,12 +1,9 @@
-import TrezorConnect, {
-  AccountInfo,
-  SignTransaction,
-} from "@trezor/connect-web";
-import { PendingTransactions, pendingTransactionsAtom } from "../state/atoms";
-// import { accountInfoDummyData } from "./tests/data/accountInfoDummy";
-// import { pendingTransactionsDummyData } from "./tests/data/pendingTransactionDummy";
-import { useAtomValue } from "jotai";
-import { accountInfoAtom, coinAtom } from "../state/atoms";
+import { AccountInfo, SignTransaction } from "@trezor/connect-web";
+import {
+  PendingTransaction,
+  PendingTransactions,
+  TransactionFeeStats,
+} from "../state/atoms";
 import "./PendingTransactions.css";
 
 type TransactionData = {
@@ -50,16 +47,12 @@ type outputScriptType =
   | "PAYTOP2SHWITNESS"
   | "PAYTOTAPROOT";
 
-// TODO: Use real data
-
-export const filterTransactionsByType = (
-  transactions: PendingTransactions,
-  type: string
-): PendingTransactions => {
-  return transactions.filter((transaction) => transaction.type === type);
+export const isSentOrDescendant = (
+  transaction: PendingTransaction
+): boolean => {
+  return transaction.type === "sent" || transaction.type === "descendant";
 };
 
-//TODO: Add parent/child to initial pending transactions
 export const transformTransactionsData = (
   transactions: PendingTransactions
 ): TransactionData => {
@@ -68,7 +61,7 @@ export const transformTransactionsData = (
       transaction.details.vin.map((input) => ({
         txid: input.txid,
         pendingTxid: transaction.txid,
-        vout: input.vout,
+        vout: input.vout ?? 0, // TODO check that it is really 0 when not present
         address: input.addresses[0],
         isOwn: input.isOwn ?? false,
         path: "",
@@ -94,11 +87,30 @@ export const transformTransactionsData = (
 export const filterOwnOutputs = (transactionData: TransactionData) => {
   return transactionData.outputs.filter((output) => output.isOwn);
 };
+export const removeDescendantInputsAndRelatedOutputs = (
+  previousTransactionsData: TransactionData
+): TransactionData => {
+  const toBeDeletedOutputs = previousTransactionsData.inputs
+    .filter((input) => !input.isOwn)
+    .map((input) => input.txid);
+
+  previousTransactionsData.inputs = previousTransactionsData.inputs.filter(
+    (input) => input.isOwn
+  );
+
+  previousTransactionsData.outputs = previousTransactionsData.outputs.filter(
+    (output) => !toBeDeletedOutputs.includes(output.txid)
+  );
+
+  return previousTransactionsData;
+};
 
 export const mergeChangeAddresses = (
   previousTransactionsData: TransactionData
 ): TransactionData => {
   const ownOutputsData = filterOwnOutputs(previousTransactionsData);
+
+  // TODO - handle case when there are no own outputs
 
   const totalAmount = ownOutputsData.reduce(
     (sum, output) => sum + output.amount,
@@ -136,7 +148,7 @@ const adjustChangeOutputAmount = (
     if (output.isOwn) {
       return {
         ...output,
-        amount: totalInputAmount - totalOutputAmount - fee,
+        amount: Math.round(totalInputAmount - totalOutputAmount - fee),
       };
     }
     return output;
@@ -148,7 +160,7 @@ const adjustChangeOutputAmount = (
   };
 };
 
-// TODO - pokud je hodnota change outputu menší než dust, tak ji odstranit
+// TODO - remove dust change output
 
 const updateChangeAddress = (
   transactionData: TransactionData,
@@ -222,6 +234,7 @@ const getAddressVSize = (address: string, type: "input" | "output"): number => {
   return addressInfo?.vSize ?? 0;
 };
 
+// TODO refactor according above approach
 const getInputScriptType = (address: string): inputScriptType => {
   if (address.startsWith("bc1p") || address.startsWith("tb1p")) {
     return "SPENDTAPROOT";
@@ -279,6 +292,116 @@ const addScriptTypes = (transactionData: TransactionData): TransactionData => {
     outputs: updatedOutputs,
   };
 };
+
+const updateTransactionVSize = (
+  transactionData: TransactionData
+): TransactionData => {
+  const inputVSize = transactionData.inputs.reduce(
+    (acc, input) => acc + getAddressVSize(input.address, "input"),
+    0
+  );
+  const outputVSize = transactionData.outputs.reduce(
+    (acc, output) => acc + getAddressVSize(output.address, "output"),
+    0
+  );
+  const headerVSize = 10.5; // TODO Distiguish legacy where the header size is 10
+  const updatedVSize = inputVSize + outputVSize + headerVSize;
+
+  return { ...transactionData, vsize: updatedVSize };
+};
+
+const calculateTransactionsStats = (
+  transactionData: TransactionData,
+  ownSendAmount: number
+): TransactionFeeStats => {
+  const totalInputAmount = transactionData.inputs.reduce(
+    (acc, input) => acc + input.amount,
+    0
+  );
+  const totalOutputAmount = transactionData.outputs.reduce(
+    (acc, output) => acc + output.amount,
+    0
+  );
+  const totalFee = totalInputAmount - totalOutputAmount;
+
+  const yourInputAmount = transactionData.inputs
+    .filter((input) => input.isOwn)
+    .reduce((acc, input) => acc + input.amount, 0);
+  const yourOutputAmount = transactionData.outputs
+    .filter((output) => output.isOwn)
+    .reduce((acc, output) => acc + output.amount, 0);
+  const yourFee = yourInputAmount - ownSendAmount - yourOutputAmount;
+
+  // TODO vypočítat, kolik jsem chtěl původně odeslat
+
+  const totalVsize = transactionData.vsize;
+
+  return {
+    totalFee,
+    yourFee,
+    totalVsize,
+    averageFeeRate: parseFloat((totalFee / totalVsize).toFixed(2)),
+  };
+};
+// Napiš funkci, která z takovéhoto objektu spočítá fee stats
+// {
+//     "inputs": [
+//       {
+//           "txid": "1a5a955a58e07c10c7891208f5981b0a5b62d1fa6a7a2c286b331168df68efe8",
+//           "pendingTxid": "2e6d979b0dd7ff2a6bb9a81af48533a59e45bf4c5e8279cf8a6b1c017db2125b",
+//           "vout": 1,
+//           "address": "tb1qdxm5nnl6fxgwe59s9lrd60n5s7whf0a7xssvnm",
+//           "isOwn": true,
+//           "path": "m/84'/1'/0'/1/63",
+//           "amount": 1640700,
+//           "scriptType": "SPENDWITNESS"
+//       },
+//       {
+//           "txid": "9708ff40149e4591ccc205a073f27c5a95b3beb5ebd6dd6ba3b60b8f2f754780",
+//           "pendingTxid": "3fb5b5f110d6a8ec214bb111d5cdeda6e1f9d54d8334b290216a315ece23d193",
+//           "address": "tb1qz2xkz9xhsfwwhws0e2fdjyn4220yjnjp8eh5x5",
+//           "isOwn": true,
+//           "path": "m/84'/1'/0'/0/54",
+//           "amount": 40000,
+//           "scriptType": "SPENDWITNESS"
+//       }
+//   ],
+//   "outputs": [
+//       {
+//           "txid": "2e6d979b0dd7ff2a6bb9a81af48533a59e45bf4c5e8279cf8a6b1c017db2125b",
+//           "address": "tb1qtyfdl5hyycrfj443nw247hy3y7n6w4plp5e5y3",
+//           "isOwn": true,
+//           "path": "m/84'/1'/0'/1/67",
+//           "amount": 1615201.9,
+//           "scriptType": "PAYTOWITNESS"
+//       },
+//       {
+//           "txid": "2e6d979b0dd7ff2a6bb9a81af48533a59e45bf4c5e8279cf8a6b1c017db2125b",
+//           "address": "tb1pvlhk0k8gc6ueh4ejx5t0vdkqhrmjhws755s7sazjg2xgqgwsvctq4yhp50",
+//           "isOwn": false,
+//           "path": "",
+//           "amount": 25000,
+//           "scriptType": "PAYTOTAPROOT"
+//       },
+//       {
+//           "txid": "1186f6050b795d93df8d12fb4e7c2044ab4182aae19a3f46a1265949cedc5cdf",
+//           "address": "tb1q68gfn8033ah8ld8vagtcrgm08xcxsekpecuy34",
+//           "isOwn": false,
+//           "path": "",
+//           "amount": 19584,
+//           "scriptType": "PAYTOWITNESS"
+//       },
+//       {
+//           "txid": "1186f6050b795d93df8d12fb4e7c2044ab4182aae19a3f46a1265949cedc5cdf",
+//           "address": "tb1p8levqrwxjyra5gfdc3hh277e0xc2vprc0cnjqv9xh833pd2c9jds8suzfs",
+//           "isOwn": false,
+//           "path": "",
+//           "amount": 20000,
+//           "scriptType": "PAYTOTAPROOT"
+//       }
+//   ],
+//   "vsize": 415.5
+// }
 
 const calculateVsize = (transactionData: TransactionData): number => {
   const baseTxSize = 10; //
@@ -419,8 +542,6 @@ const prepareForSigning = (
     script_type: input.scriptType,
   }));
 
-  // console.log("prepared inputs: ", inputs);
-
   const outputs = [];
 
   for (const output of transactionData.outputs) {
@@ -443,7 +564,7 @@ const prepareForSigning = (
     inputs,
     outputs,
     coin: coin,
-    push: true,
+    push: false,
     amountUnit: 3,
   };
 };
@@ -456,25 +577,50 @@ export const mergeDiscoveredTransactions = (
   if (accountInfo === null) {
     return null;
   }
+  // const setMergedTransactionsStats = useSetAtom(mergedTransactionsStatsAtom);
+  const filteredTransactions = pendingTransactions.filter(isSentOrDescendant);
+  console.log("filteredTransactions", filteredTransactions);
+  const transformedData = transformTransactionsData(filteredTransactions);
 
-  const keepSendOnly = filterTransactionsByType(pendingTransactions, "sent");
-  const transformedData = transformTransactionsData(keepSendOnly);
+  // update vsize
 
-  const oldTotalFee = keepSendOnly.reduce(
-    (acc, transaction) => acc + Number(transaction.fee),
-    0
+  const sentOnly = filteredTransactions.filter(
+    (transaction) => transaction.type === "sent"
   );
-  console.log("totalFee: ", oldTotalFee);
+
+  // const oldTotalFee = filteredTransactions.reduce(
+  //   (acc, transaction) => acc + Number(transaction.fee),
+  //   0
+  // );
+  // console.log("totalFee: ", oldTotalFee);
 
   const oldMaxFeeRate = Math.max(
-    ...keepSendOnly.map((transaction) => Number(transaction.feeRate))
+    ...sentOnly.map((transaction) => Number(transaction.feeRate))
   );
 
-  console.log("maxFeeRate: ", oldMaxFeeRate);
-  const newFeeRate = oldMaxFeeRate + 1;
-  console.log("newFeeRate: ", newFeeRate);
+  // console.log("maxFeeRate: ", oldMaxFeeRate);
+  const newFeeRate = oldMaxFeeRate + 0.5; // TODO - consider descendant fee rates
+  // console.log("newFeeRate: ", newFeeRate);
 
-  const mergedChangeAddresses = mergeChangeAddresses(transformedData);
+  const transformedSentOnly = transformTransactionsData(sentOnly);
+  const ownSendAmount = transformedSentOnly.outputs
+    .filter((output) => !output.isOwn)
+    .reduce((sum, output) => sum + output.amount, 0);
+
+  console.log("Own Send Amount:", ownSendAmount);
+
+  console.log("transformedData", transformedData);
+  const removedDescendantInputsAndRelatedOutputs =
+    removeDescendantInputsAndRelatedOutputs(transformedData);
+  console.log(
+    "removedDescendantInputsAndRelatedOutputs",
+    removedDescendantInputsAndRelatedOutputs
+  );
+
+  const mergedChangeAddresses = mergeChangeAddresses(
+    removedDescendantInputsAndRelatedOutputs
+  );
+
   const updatedChangeAddress = updateChangeAddress(
     mergedChangeAddresses,
     accountInfo
@@ -485,8 +631,10 @@ export const mergeDiscoveredTransactions = (
     newFeeRate
   );
 
+  const updatedVSize = updateTransactionVSize(removedRedundantInputs);
+
   const adjustedChangeOutputAmount = adjustChangeOutputAmount(
-    removedRedundantInputs,
+    updatedVSize,
     newFeeRate
   );
 
@@ -497,45 +645,12 @@ export const mergeDiscoveredTransactions = (
 
   const addedScriptTypes = addScriptTypes(addedInputPaths);
 
-  const toBeSignedTransaction = prepareForSigning(addedScriptTypes, coin);
-  // console.log("toBeSignedTransaction: ", toBeSignedTransaction);
-
-  return toBeSignedTransaction;
-};
-
-// TODO: Identify dependent transactions
-
-const MergeAndSignDiscoveredTransactions = () => {
-  const coin = useAtomValue(coinAtom);
-  const accountInfo = useAtomValue(accountInfoAtom);
-  const pendingTransactions = useAtomValue(pendingTransactionsAtom);
-
-  const handleButtonClick = async () => {
-    const toBeSignedTransaction = mergeDiscoveredTransactions(
-      accountInfo,
-      pendingTransactions,
-      coin
-    );
-
-    if (toBeSignedTransaction) {
-      const signResult = await TrezorConnect.signTransaction(
-        toBeSignedTransaction
-      );
-      console.log("signResult: ", signResult);
-    } else {
-      console.error("Failed to prepare transaction for signing.");
-    }
-  };
-
-  return (
-    <>
-      <div>
-        <button className="primary-button button" onClick={handleButtonClick}>
-          💪 Merge
-        </button>
-      </div>
-    </>
+  const calculatedTransactionsStats = calculateTransactionsStats(
+    addedScriptTypes,
+    ownSendAmount
   );
-};
 
-export default MergeAndSignDiscoveredTransactions;
+  const toBeSignedTransaction = prepareForSigning(addedScriptTypes, coin);
+
+  return { toBeSignedTransaction, calculatedTransactionsStats };
+};

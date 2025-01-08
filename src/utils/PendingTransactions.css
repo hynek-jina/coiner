@@ -62,7 +62,7 @@
   /* font-weight: bold; */
   width: 280px;
   padding: 1rem;
-  margin-left: auto;
+  /* margin-left: auto; */
   transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease; /* Přidán přechod pro hladší změnu barev a stínu */
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Přidán efekt stínu */
 }
@@ -71,6 +71,7 @@
   background-color: #40c1cd;
   color: white;
   margin-bottom: 2rem;
+  margin-top: 2rem;
 }
 
 .primary-button:hover {

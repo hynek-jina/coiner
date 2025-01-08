@@ -88,6 +88,27 @@ export interface MempoolFees {
   minimumFee: number;
 }
 
+export interface TransactionFeeStats {
+  totalFee: number;
+  totalVsize: number;
+  averageFeeRate: number;
+  yourFee: number;
+}
+
+export const pendingTransactionsStatsAtom = atom<TransactionFeeStats>({
+  totalFee: 1,
+  totalVsize: 2,
+  averageFeeRate: 3,
+  yourFee: 4,
+});
+
+export const mergedTransactionsStatsAtom = atom<TransactionFeeStats>({
+  totalFee: 1,
+  totalVsize: 2,
+  averageFeeRate: 3,
+  yourFee: 4,
+});
+
 export const coinAtom = atom<string>("test");
 export const networkAtom = atom<string>((get) => {
   const coin = get(coinAtom);
@@ -108,6 +129,8 @@ export const transactionTemplateAtom = atom<SignTransaction>({
   push: false,
   amountUnit: 3,
 });
+
+export const toBeSignedTransactionAtom = atom<SignTransaction | null>(null);
 
 export const accountInfoAtom = atom<AccountInfo | null>(null);
 // export const accountInfoAtom = atom<AccountInfo | null>(accountInfoDummyData);

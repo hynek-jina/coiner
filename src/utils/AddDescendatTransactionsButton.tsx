@@ -11,7 +11,7 @@ import {
   networkAtom,
   pendingTransactionsAtom,
 } from "../state/atoms";
-import ConvertTransaction from "./ConvertTransaction";
+import convertTransaction from "./convertTransaction";
 import GetTransaction from "./GetTransaction";
 import SearchForChildTransaction from "./SearchForChildTransaction";
 
@@ -37,10 +37,19 @@ const AddDescendatsTransactionButton = () => {
       }
       setChildTransactionIDs(newChildTransactionIDs);
 
+      // keep only transactions with one input
+      const filteredTransactionIDs = [];
       for (const transactionID of newChildTransactionIDs) {
         const childTransaction = await GetTransaction(transactionID, network);
+        if (childTransaction && childTransaction.vin.length === 1) {
+          filteredTransactionIDs.push(transactionID);
+        }
+      }
+
+      for (const transactionID of filteredTransactionIDs) {
+        const childTransaction = await GetTransaction(transactionID, network);
         if (childTransaction) {
-          const convertedTransaction = ConvertTransaction(childTransaction);
+          const convertedTransaction = convertTransaction(childTransaction);
           const extended = [...pendingTransactions, convertedTransaction];
 
           setExtendedTransactions(extended);

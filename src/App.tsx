@@ -12,7 +12,7 @@ import Navbar from "./components/Navbar";
 // import { filterTransactionsByType } from "./utils/MergeDiscoveredTransactions";
 import process from "process";
 import Coins from "./pages/Coins";
-import Experimental from "./pages/Experimental";
+// import Experimental from "./pages/Experimental";
 import Settings from "./pages/Settings";
 
 window.process = process;
@@ -42,7 +42,7 @@ function App() {
         <div style={{ paddingTop: "4rem" }}>
           <Routes>
             <Route path="/" element={<Coins />} />
-            <Route path="/experimental" element={<Experimental />} />
+            {/* <Route path="/experimental" element={<Experimental />} /> */}
             <Route path="/settings" element={<Settings />} />
           </Routes>
         </div>

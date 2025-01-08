@@ -1,4 +1,4 @@
-import { mergeDiscoveredTransactions } from "../MergeDiscoveredTransactions";
+import { mergeDiscoveredTransactions } from "../mergeDiscoveredTransactions";
 import { accountInfoDummyData } from "./data/accountInfoDummy";
 import { pendingTransactionsDummyData } from "./data/pendingTransactionDummy";
 import { toBeSignedDummy } from "./data/toBeSignedDummy";

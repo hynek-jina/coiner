@@ -8,22 +8,21 @@ You will need to purchase a [Trezor](https://trezor.io/) device to use Coiner ap
 ### 💪 List of features
 
 - [x] See your valid coins as a bubbles
-- [ ] Build consolidation transaction
 - [x] Merge pending transactions
-- [ ] Include foreign child transaction in merging
-- [ ] Cancel pending transactions
-- [ ] Bitcoin mainnet
-- [ ] Select account
+- [x] Passphrase support
+- [x] Include foreign child transaction in merging
+- [x] Bitcoin mainnet
+- [x] Select account
 
 ### 🚫 Not planned features (as of now)
 
 - Multiple accounts
-- Passphrase support
 - Fiat currencties
+- Cancel pending transactions
+- Build consolidation transaction
 - Generate receive address
 - Compose send transaction
 - Export/Import PSBT
-- BTC units
 - Pretty web design
 
 Run the project with command: `yarn start`

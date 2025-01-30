@@ -1,26 +1,43 @@
-import TrezorConnect from "@trezor/connect-web";
+import TrezorConnect, { SignTransaction } from "@trezor/connect-web";
 import { useAtomValue } from "jotai";
-import { transactionDataAtom } from "../state/atoms";
+import React from "react";
+import {
+  mergedTransactionsStatsAtom,
+  pendingTransactionsStatsAtom,
+} from "../state/atoms";
+import "./PendingTransactions.css";
 
-const SignTransaction = () => {
-  const transactionData = useAtomValue(transactionDataAtom);
-  // const toBeSignedTransaction
+interface SignTransactionWithTrezorProps {
+  toBeSignedTransaction: SignTransaction;
+}
+
+const SignTransactionWithTrezor: React.FC<SignTransactionWithTrezorProps> = ({
+  toBeSignedTransaction,
+}) => {
+  const pendingTransactionsStats = useAtomValue(pendingTransactionsStatsAtom);
+  const mergedTransactionsStats = useAtomValue(mergedTransactionsStatsAtom);
+  const calculatedSavings =
+    pendingTransactionsStats.yourFee - mergedTransactionsStats.yourFee;
 
   const handleTrezorButtonClick = async () => {
-    const signResult = await TrezorConnect.signTransaction(transactionData);
+    const signResult = await TrezorConnect.signTransaction(
+      toBeSignedTransaction
+    );
     console.log("signResult: ", signResult);
   };
 
   return (
     <>
-      <label>Sign transaction:</label>
-      <button onClick={handleTrezorButtonClick}>
-        Sign Transaction with Trezor
-      </button>
-      Transaction data:
-      <div>{JSON.stringify(transactionData)}</div>
+      {toBeSignedTransaction && (
+        <button
+          className="button primary-button"
+          onClick={handleTrezorButtonClick}
+        >
+          Save {calculatedSavings} sats
+        </button>
+      )}
     </>
   );
 };
 
-export default SignTransaction;
+export default SignTransactionWithTrezor;

@@ -38,14 +38,14 @@ interface Vin {
   n: number;
   addresses: string[];
   isAddress: boolean;
-  isOwn: boolean;
-  value: string;
-  isAccountOwned: boolean;
+  isOwn?: boolean;
+  value?: string;
+  isAccountOwned?: boolean;
 }
 interface Vout {
   value: string;
   n: number;
-  hex: string;
+  hex?: string;
   addresses: string[];
   isAddress: boolean;
   isOwn?: boolean;
@@ -60,21 +60,21 @@ interface Details {
   totalOutput: string;
 }
 
-interface PendingTransaction {
+export interface PendingTransaction {
   type: string;
   txid: string;
-  hex: string;
-  blockTime: number;
-  blockHeight: number;
-  lockTime: number;
-  amount: string;
+  hex?: string;
+  blockTime?: number;
+  blockHeight?: number;
+  lockTime?: number;
+  amount?: string;
   fee: string;
   vsize: number;
   feeRate: string;
-  targets: Targets[];
-  tokens: any[];
-  internalTransfers: any[];
-  rbf: boolean;
+  targets?: Targets[];
+  tokens?: any[];
+  internalTransfers?: any[];
+  rbf?: boolean;
   details: Details;
 }
 
@@ -88,7 +88,34 @@ export interface MempoolFees {
   minimumFee: number;
 }
 
+export interface TransactionFeeStats {
+  totalFee: number;
+  totalVsize: number;
+  averageFeeRate: number;
+  yourFee: number;
+}
+
+export const pendingTransactionsStatsAtom = atom<TransactionFeeStats>({
+  totalFee: 1,
+  totalVsize: 2,
+  averageFeeRate: 3,
+  yourFee: 4,
+});
+
+export const mergedTransactionsStatsAtom = atom<TransactionFeeStats>({
+  totalFee: 1,
+  totalVsize: 2,
+  averageFeeRate: 3,
+  yourFee: 4,
+});
+
 export const coinAtom = atom<string>("test");
+export const networkAtom = atom<string>((get) => {
+  const coin = get(coinAtom);
+  return coin === "test" ? "testnet" : "";
+});
+
+export const childTransactionIDsAtom = atom<string[]>([]);
 
 export const pathAtom = atom<string>((get) => {
   const coin = get(coinAtom);
@@ -103,7 +130,10 @@ export const transactionTemplateAtom = atom<SignTransaction>({
   amountUnit: 3,
 });
 
+export const toBeSignedTransactionAtom = atom<SignTransaction | null>(null);
+
 export const accountInfoAtom = atom<AccountInfo | null>(null);
+// export const accountInfoAtom = atom<AccountInfo | null>(accountInfoDummyData);
 
 export const utxoAtom = atom<Utxo[]>([
   {
@@ -125,45 +155,6 @@ export const utxoAtom = atom<Utxo[]>([
     confirmations: 230740,
   },
 ]);
-// export const utxoAtom = atom<Utxo[]>((get) => {
-//   const accountInfo = get(accountInfoAtom);
-//   console.log("máme accountInfo? ", accountInfo);
-//   console.log("a i utxo?", accountInfo?.utxo);
-//   if (!accountInfo || !accountInfo.utxo) {
-//     return [
-//       {
-//         txid: "78650322334f23c5145782cd125a07de6527b5d3c26d0571b1b51e41759ea6ea",
-//         vout: 0,
-//         amount: 1638,
-//         blockHeight: 2585441,
-//         address: "tb1ql4w0l2836awduxgfe4egjgd0t4my8cgtdf9052",
-//         path: "m/84'/1'/0'/1/49",
-//         confirmations: 230740,
-//       },
-//       {
-//         txid: "78650322334f23c5145782cd125a07de6527b5d3c26d0571b1b51e41759ea6ea",
-//         vout: 1,
-//         amount: 10000,
-//         blockHeight: 2585441,
-//         address: "tb1qfv8mwtk7mu7rzf85pcupp0zuhhkwhd34vggj0l",
-//         path: "m/84'/1'/0'/0/50",
-//         confirmations: 230740,
-//       },
-//     ];
-//   }
-
-//   return accountInfo.utxo.map(
-//     ({ txid, vout, amount, blockHeight, address, path, confirmations }) => ({
-//       txid,
-//       vout: Number(vout),
-//       amount: Number(amount),
-//       blockHeight: Number(blockHeight),
-//       address,
-//       path,
-//       confirmations: Number(confirmations),
-//     })
-//   );
-// });
 
 export const pendingTransactionsAtom = atom<PendingTransactions>((get) => {
   const accountInfo = get(accountInfoAtom);
@@ -180,6 +171,8 @@ export const pendingTransactionsAtom = atom<PendingTransactions>((get) => {
       })) as PendingTransaction[]) || []
   );
 });
+
+export const extendedTransactionsAtom = atom<PendingTransactions | null>(null);
 
 // Very simplified. In reality, the weight depends on script type and other factors.
 const UTXO_WEIGHT = 72; // weight of each UTXO
